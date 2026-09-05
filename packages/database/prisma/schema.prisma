@@ -19,9 +19,11 @@ model User {
   image         String?
   createdAt     DateTime  @default(now()) @map("created_at")
 
-  accounts       Account[]
-  sessions       Session[]
+  accounts        Account[]
+  sessions        Session[]
   progressEntries ProgressEntry[]
+  routines        Routine[]
+  workoutSessions WorkoutSession[]
 
   @@map("users")
 }
@@ -143,6 +145,79 @@ model Exercise {
   primaryMuscles   Muscle[]          @relation("ExercisePrimaryMuscles")
   secondaryMuscles Muscle[]          @relation("ExerciseSecondaryMuscles")
   equipment        Equipment[]
+  routineExercises RoutineExercise[]
+  workoutSetLogs   WorkoutSetLog[]
 
   @@map("exercises")
 }
+
+// --- Rutinas y entrenamientos (Gym Tracker) ---
+// Una Routine es la plantilla ("Empuje: pecho, hombro y triceps", programada
+// los lunes y jueves); un WorkoutSession es un entrenamiento real que
+// ocurrio un dia puntual (opcionalmente siguiendo una rutina), y cada set
+// hecho ese dia queda en WorkoutSetLog. El heatmap de dias entrenados y el
+// historial salen de WorkoutSession; el progreso de peso por ejercicio sale
+// de WorkoutSetLog agrupado por exercise. "Completada" para la rutina del dia
+// no es un booleano guardado: es que exista un WorkoutSession para hoy.
+
+model Routine {
+  id         String   @id @default(cuid())
+  userId     String   @map("user_id")
+  name       String
+  daysOfWeek Int[]    @map("days_of_week") // 0=domingo ... 6=sabado
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  exercises RoutineExercise[]
+  sessions  WorkoutSession[]
+
+  @@map("routines")
+}
+
+model RoutineExercise {
+  id             String   @id @default(cuid())
+  routineId      String   @map("routine_id")
+  exerciseId     String   @map("exercise_id")
+  position       Int
+  targetSets     Int?     @map("target_sets")
+  targetReps     Int?     @map("target_reps")
+  targetWeightKg Decimal? @map("target_weight_kg") @db.Decimal(6, 2)
+
+  routine  Routine  @relation(fields: [routineId], references: [id], onDelete: Cascade)
+  exercise Exercise @relation(fields: [exerciseId], references: [id])
+
+  @@unique([routineId, exerciseId])
+  @@map("routine_exercises")
+}
+
+model WorkoutSession {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  routineId String?  @map("routine_id")
+  date      DateTime @db.Date
+  notes     String?  @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user    User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  routine Routine?        @relation(fields: [routineId], references: [id], onDelete: SetNull)
+  sets    WorkoutSetLog[]
+
+  @@map("workout_sessions")
+}
+
+model WorkoutSetLog {
+  id         String   @id @default(cuid())
+  sessionId  String   @map("session_id")
+  exerciseId String   @map("exercise_id")
+  setNumber  Int      @map("set_number")
+  weightKg   Decimal? @map("weight_kg") @db.Decimal(6, 2)
+  reps       Int?
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  session  WorkoutSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  exercise Exercise       @relation(fields: [exerciseId], references: [id])
+
+  @@map("workout_set_logs")
+}
+

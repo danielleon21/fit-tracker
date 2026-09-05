@@ -10,14 +10,28 @@ const summarySelect = {
   category: { select: { id: true, name: true } },
 } as const;
 
+// Postgres ILIKE/`contains` no ignora acentos ("Extension" no encuentra
+// "Extensión") sin la extension `unaccent`. En vez de agregar esa extension,
+// normalizamos en JS: el catalogo entero (~870 filas, importado una vez desde
+// wger) cabe comodo en memoria, asi que no hace falta filtrar en la base.
+function normalizeForSearch(text: string): string {
+  return text
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .toLowerCase();
+}
+
 export const exerciseRepository = {
-  findMany(search?: string) {
-    return prisma.exercise.findMany({
-      where: search ? { name: { contains: search, mode: "insensitive" as const } } : undefined,
-      select: summarySelect,
-      orderBy: { name: "asc" },
-      take: SEARCH_LIMIT,
-    });
+  async findMany(search?: string) {
+    if (!search) {
+      return prisma.exercise.findMany({ select: summarySelect, orderBy: { name: "asc" }, take: SEARCH_LIMIT });
+    }
+
+    const normalizedQuery = normalizeForSearch(search);
+    const allExercises = await prisma.exercise.findMany({ select: summarySelect, orderBy: { name: "asc" } });
+    return allExercises
+      .filter((exercise) => normalizeForSearch(exercise.name).includes(normalizedQuery))
+      .slice(0, SEARCH_LIMIT);
   },
 
   findById(id: string) {

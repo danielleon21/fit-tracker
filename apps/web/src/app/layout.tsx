@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { lora, karla } from "./fonts";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -8,10 +9,8 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="es">
-      <body className="bg-white text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100">
-        {children}
-      </body>
+    <html lang="es" className={`${lora.variable} ${karla.variable}`}>
+      <body className="bg-bg font-sans text-ink">{children}</body>
     </html>
   );
 }

@@ -21,6 +21,16 @@ function normalizeForSearch(text: string): string {
     .toLowerCase();
 }
 
+// Conectores que el usuario suele omitir al buscar ("Press banca" en vez de
+// "Press de banca") - se ignoran del lado de la busqueda, no del nombre real.
+const SEARCH_STOPWORDS = new Set(["de", "del", "la", "el", "los", "las", "y", "con", "en", "al"]);
+
+function searchTokens(text: string): string[] {
+  return normalizeForSearch(text)
+    .split(/\s+/)
+    .filter((token) => token.length > 0 && !SEARCH_STOPWORDS.has(token));
+}
+
 export const exerciseRepository = {
   async findMany(search?: string) {
     if (!search) {
@@ -28,9 +38,25 @@ export const exerciseRepository = {
     }
 
     const normalizedQuery = normalizeForSearch(search);
+    const queryTokens = searchTokens(search);
+    if (queryTokens.length === 0) return [];
+
     const allExercises = await prisma.exercise.findMany({ select: summarySelect, orderBy: { name: "asc" } });
+
+    // Todas las palabras de la busqueda deben aparecer en el nombre, en
+    // cualquier orden y sin necesitar ser contiguas ("Press banca" ->
+    // "Press de banca" tambien cuenta). Las coincidencias que ademas
+    // contienen la frase completa se muestran primero.
     return allExercises
-      .filter((exercise) => normalizeForSearch(exercise.name).includes(normalizedQuery))
+      .filter((exercise) => {
+        const normalizedName = normalizeForSearch(exercise.name);
+        return queryTokens.every((token) => normalizedName.includes(token));
+      })
+      .sort((a, b) => {
+        const aIsPhraseMatch = normalizeForSearch(a.name).includes(normalizedQuery) ? 0 : 1;
+        const bIsPhraseMatch = normalizeForSearch(b.name).includes(normalizedQuery) ? 0 : 1;
+        return aIsPhraseMatch - bIsPhraseMatch || a.name.localeCompare(b.name);
+      })
       .slice(0, SEARCH_LIMIT);
   },
 

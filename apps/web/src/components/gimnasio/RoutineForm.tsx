@@ -21,6 +21,7 @@ interface DraftExercise {
   targetSets: string;
   targetReps: string;
   targetWeightKg: string;
+  notes: string;
 }
 
 interface RoutineFormProps {
@@ -56,7 +57,7 @@ export function RoutineForm({ submitLabel, onSubmit }: RoutineFormProps) {
   function addExercise(exercise: ExerciseSummary) {
     setExercises((prev) => [
       ...prev,
-      { exerciseId: exercise.id, name: exercise.name, targetSets: "", targetReps: "", targetWeightKg: "" },
+      { exerciseId: exercise.id, name: exercise.name, targetSets: "", targetReps: "", targetWeightKg: "", notes: "" },
     ]);
   }
 
@@ -106,6 +107,7 @@ export function RoutineForm({ submitLabel, onSubmit }: RoutineFormProps) {
           targetSets: toNullableInt(ex.targetSets),
           targetReps: toNullableInt(ex.targetReps),
           targetWeightKg: toNullableFloat(ex.targetWeightKg),
+          notes: ex.notes.trim() ? ex.notes.trim() : null,
         })),
       });
     } catch (err) {
@@ -221,6 +223,14 @@ export function RoutineForm({ submitLabel, onSubmit }: RoutineFormProps) {
                     onChange={(event) => updateExerciseField(exercise.exerciseId, "targetWeightKg", event.target.value)}
                   />
                 </div>
+                <FormField
+                  id={`notes-${exercise.exerciseId}`}
+                  label="Nota (ej. máquina exacta)"
+                  type="text"
+                  placeholder="Máquina Hammer Strength, puesto 3"
+                  value={exercise.notes}
+                  onChange={(event) => updateExerciseField(exercise.exerciseId, "notes", event.target.value)}
+                />
               </div>
             ))}
           </div>

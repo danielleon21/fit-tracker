@@ -33,11 +33,12 @@ export function RoutineListItem({ routine, onDelete }: RoutineListItemProps) {
           Borrar
         </button>
       </div>
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-col gap-1.5">
         {routine.exercises.map((re) => (
-          <span key={re.id} className="rounded-lg bg-surface-2 px-2.5 py-1 text-xs font-medium text-label">
-            {re.exercise.name}
-          </span>
+          <div key={re.id} className="flex flex-col gap-0.5 rounded-lg bg-surface-2 px-2.5 py-1.5">
+            <span className="text-xs font-medium text-label">{re.exercise.name}</span>
+            {re.notes ? <span className="text-[11px] text-muted">{re.notes}</span> : null}
+          </div>
         ))}
       </div>
     </div>

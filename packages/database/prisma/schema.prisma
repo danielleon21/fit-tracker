@@ -183,6 +183,7 @@ model RoutineExercise {
   targetSets     Int?     @map("target_sets")
   targetReps     Int?     @map("target_reps")
   targetWeightKg Decimal? @map("target_weight_kg") @db.Decimal(6, 2)
+  notes          String?  @db.Text // ej. "Máquina Hammer Strength, puesto 3"
 
   routine  Routine  @relation(fields: [routineId], references: [id], onDelete: Cascade)
   exercise Exercise @relation(fields: [exerciseId], references: [id])

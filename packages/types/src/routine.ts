@@ -7,6 +7,7 @@ export interface RoutineExercise {
   targetSets: number | null;
   targetReps: number | null;
   targetWeightKg: number | null;
+  notes: string | null;
   exercise: ExerciseSummary;
 }
 
@@ -26,6 +27,7 @@ export interface RoutineExerciseInput {
   targetSets?: number | null;
   targetReps?: number | null;
   targetWeightKg?: number | null;
+  notes?: string | null;
 }
 
 export interface CreateRoutineInput {

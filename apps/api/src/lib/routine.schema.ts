@@ -6,6 +6,7 @@ const routineExerciseSchema = z.object({
   targetSets: z.number().int().positive().nullable().optional(),
   targetReps: z.number().int().positive().nullable().optional(),
   targetWeightKg: z.number().positive().nullable().optional(),
+  notes: z.string().max(500).nullable().optional(),
 });
 
 const routineFieldsSchema = z.object({

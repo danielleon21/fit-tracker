@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { useProgress } from "@/hooks/useProgress";
@@ -11,6 +11,9 @@ import { EmptyState } from "@/components/dashboard/EmptyState";
 import { CaloriesCard } from "@/components/dashboard/CaloriesCard";
 import { MacrosCard } from "@/components/dashboard/MacrosCard";
 import { RoutineCard } from "@/components/dashboard/RoutineCard";
+import { ProgressOnboardingModal } from "@/components/dashboard/ProgressOnboardingModal";
+import { ProgressProfileModal } from "@/components/dashboard/ProgressProfileModal";
+import type { ProgressFormValues } from "@/components/dashboard/ProgressEntryForm";
 
 function delta(current: number | null, previous: number | null) {
   if (current == null || previous == null) return null;
@@ -20,7 +23,8 @@ function delta(current: number | null, previous: number | null) {
 export default function DashboardPage() {
   const router = useRouter();
   const { user, isLoading: isAuthLoading, logout } = useAuth();
-  const { entries, isLoading: isProgressLoading } = useProgress();
+  const { entries, isLoading: isProgressLoading, addEntry, updateEntry } = useProgress();
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
   useEffect(() => {
     if (!isAuthLoading && !user) {
@@ -35,6 +39,17 @@ export default function DashboardPage() {
   const latest = entries[0] ?? null;
   const previous = entries[1] ?? null;
   const userInitial = (user.name ?? user.email)[0]?.toUpperCase() ?? "?";
+  const showOnboarding = !isProgressLoading && entries.length === 0;
+
+  async function handleOnboardingSubmit(values: ProgressFormValues) {
+    await addEntry({ date: new Date().toISOString().slice(0, 10), ...values });
+  }
+
+  async function handleProfileSubmit(values: ProgressFormValues) {
+    if (!latest) return;
+    await updateEntry(latest.id, values);
+    setIsProfileModalOpen(false);
+  }
 
   const weightDelta = latest ? delta(latest.weightKg, previous?.weightKg ?? null) : null;
   const bodyFatDelta = latest ? delta(latest.bodyFatPct, previous?.bodyFatPct ?? null) : null;
@@ -46,7 +61,12 @@ export default function DashboardPage() {
       <div className="pointer-events-none absolute -right-36 -top-44 h-[480px] w-[480px] rounded-full bg-blob-violet blur-[80px]" />
 
       <div className="relative flex flex-col gap-6 p-6 sm:p-12">
-        <AppHeader userInitial={userInitial} userLabel={user.name ?? user.email} onLogout={logout} />
+        <AppHeader
+          userInitial={userInitial}
+          userLabel={user.name ?? user.email}
+          onOpenProfile={() => setIsProfileModalOpen(true)}
+          onLogout={logout}
+        />
 
         {isProgressLoading ? (
           <div className="rounded-2xl border border-border bg-surface p-8 text-center text-sm text-muted">
@@ -118,6 +138,16 @@ export default function DashboardPage() {
 
         <RoutineCard />
       </div>
+
+      {showOnboarding ? <ProgressOnboardingModal onSubmit={handleOnboardingSubmit} /> : null}
+
+      {isProfileModalOpen && latest ? (
+        <ProgressProfileModal
+          latestEntry={latest}
+          onSubmit={handleProfileSubmit}
+          onClose={() => setIsProfileModalOpen(false)}
+        />
+      ) : null}
     </div>
   );
 }

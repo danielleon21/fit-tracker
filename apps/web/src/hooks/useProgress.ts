@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import type { CreateProgressEntryInput, ProgressEntry } from "@fit-tracker/types";
+import type { CreateProgressEntryInput, ProgressEntry, UpdateProgressEntryInput } from "@fit-tracker/types";
 import { apiFetch } from "@/lib/api-client";
 
 export function useProgress() {
@@ -30,9 +30,17 @@ export function useProgress() {
     [refresh],
   );
 
+  const updateEntry = useCallback(
+    async (id: string, input: UpdateProgressEntryInput) => {
+      await apiFetch(`/api/progress/${id}`, { method: "PUT", body: JSON.stringify(input) });
+      await refresh();
+    },
+    [refresh],
+  );
+
   useEffect(() => {
     refresh();
   }, [refresh]);
 
-  return { entries, isLoading, error, addEntry, refresh };
+  return { entries, isLoading, error, addEntry, updateEntry, refresh };
 }

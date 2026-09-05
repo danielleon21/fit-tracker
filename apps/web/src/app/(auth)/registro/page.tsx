@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
 import { AuthShell } from "@/components/auth/AuthShell";
 import { AuthModuleIcons } from "@/components/auth/AuthModuleIcons";
-import { AuthField } from "@/components/auth/AuthField";
+import { FormField } from "@/components/shared/FormField";
 
 export default function RegistroPage() {
   const router = useRouter();
@@ -47,7 +47,7 @@ export default function RegistroPage() {
       </div>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <AuthField
+        <FormField
           id="name"
           label="Nombre"
           type="text"
@@ -56,7 +56,7 @@ export default function RegistroPage() {
           value={name}
           onChange={(event) => setName(event.target.value)}
         />
-        <AuthField
+        <FormField
           id="email"
           label="Email"
           type="email"
@@ -66,7 +66,7 @@ export default function RegistroPage() {
           value={email}
           onChange={(event) => setEmail(event.target.value)}
         />
-        <AuthField
+        <FormField
           id="password"
           label="Contraseña"
           type="password"
@@ -79,7 +79,7 @@ export default function RegistroPage() {
           onChange={(event) => setPassword(event.target.value)}
         />
 
-        {error ? <p className="text-sm text-red-400">{error}</p> : null}
+        {error ? <p className="text-sm text-danger">{error}</p> : null}
 
         <button
           type="submit"

@@ -1,4 +1,5 @@
 import type { ExerciseSummary } from "./exercise";
+import type { WorkoutSession } from "./workout";
 
 export interface RoutineExercise {
   id: string;
@@ -34,3 +35,8 @@ export interface CreateRoutineInput {
 }
 
 export type UpdateRoutineInput = CreateRoutineInput;
+
+export interface TodayRoutineStatus {
+  routine: Routine;
+  session: WorkoutSession | null;
+}

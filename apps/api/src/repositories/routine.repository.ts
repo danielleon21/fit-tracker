@@ -105,4 +105,13 @@ export const routineRepository = {
     await prisma.routine.delete({ where: { id } });
     return true;
   },
+
+  async findScheduledForWeekday(userId: string, weekday: number) {
+    const routines = await prisma.routine.findMany({
+      where: { userId, daysOfWeek: { has: weekday } },
+      include: routineInclude,
+      orderBy: { createdAt: "asc" },
+    });
+    return routines.map(toDto);
+  },
 };

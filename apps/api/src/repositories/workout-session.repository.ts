@@ -68,6 +68,14 @@ export const workoutSessionRepository = {
     return sessions.map(toDto);
   },
 
+  async findManyByUserAndDate(userId: string, date: Date) {
+    const sessions = await prisma.workoutSession.findMany({
+      where: { userId, date },
+      include: sessionInclude,
+    });
+    return sessions.map(toDto);
+  },
+
   async findById(id: string, userId: string) {
     const session = await prisma.workoutSession.findFirst({
       where: { id, userId },

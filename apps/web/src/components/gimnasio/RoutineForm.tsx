@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import type { CreateRoutineInput, ExerciseSummary } from "@fit-tracker/types";
+import type { CreateRoutineInput, ExerciseSummary, Routine } from "@fit-tracker/types";
 import { FormField } from "@/components/shared/FormField";
 import { ExercisePicker } from "@/components/gimnasio/ExercisePicker";
 
@@ -27,6 +27,25 @@ interface DraftExercise {
 interface RoutineFormProps {
   submitLabel: string;
   onSubmit: (input: CreateRoutineInput) => Promise<void>;
+  initialRoutine?: Routine;
+}
+
+function toInputValue(value: number | null) {
+  return value == null ? "" : String(value);
+}
+
+function draftExercisesFromRoutine(routine?: Routine): DraftExercise[] {
+  if (!routine) return [];
+  return [...routine.exercises]
+    .sort((a, b) => a.position - b.position)
+    .map((re) => ({
+      exerciseId: re.exercise.id,
+      name: re.exercise.name,
+      targetSets: toInputValue(re.targetSets),
+      targetReps: toInputValue(re.targetReps),
+      targetWeightKg: toInputValue(re.targetWeightKg),
+      notes: re.notes ?? "",
+    }));
 }
 
 function toNullableInt(raw: string) {
@@ -43,10 +62,10 @@ function toNullableFloat(raw: string) {
   return Number.isNaN(value) ? null : value;
 }
 
-export function RoutineForm({ submitLabel, onSubmit }: RoutineFormProps) {
-  const [name, setName] = useState("");
-  const [selectedDays, setSelectedDays] = useState<number[]>([]);
-  const [exercises, setExercises] = useState<DraftExercise[]>([]);
+export function RoutineForm({ submitLabel, onSubmit, initialRoutine }: RoutineFormProps) {
+  const [name, setName] = useState(initialRoutine?.name ?? "");
+  const [selectedDays, setSelectedDays] = useState<number[]>(initialRoutine?.daysOfWeek ?? []);
+  const [exercises, setExercises] = useState<DraftExercise[]>(() => draftExercisesFromRoutine(initialRoutine));
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 

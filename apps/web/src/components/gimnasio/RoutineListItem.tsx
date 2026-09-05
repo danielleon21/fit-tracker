@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import type { Routine } from "@fit-tracker/types";
 
 const WEEKDAY_LABELS = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
@@ -25,13 +26,21 @@ export function RoutineListItem({ routine, onDelete }: RoutineListItemProps) {
           <div className="font-serif text-lg font-semibold text-ink">{routine.name}</div>
           <div className="text-xs text-muted">{days.length > 0 ? days.join(", ") : "Sin días programados"}</div>
         </div>
-        <button
-          type="button"
-          onClick={handleDelete}
-          className="rounded-full border border-border px-3.5 py-1.5 text-xs font-semibold text-muted hover:border-danger hover:text-danger"
-        >
-          Borrar
-        </button>
+        <div className="flex flex-none items-center gap-2">
+          <Link
+            href={`/gimnasio/rutinas/${routine.id}/editar`}
+            className="rounded-full border border-border px-3.5 py-1.5 text-xs font-semibold text-muted hover:border-accent hover:text-accent"
+          >
+            Editar
+          </Link>
+          <button
+            type="button"
+            onClick={handleDelete}
+            className="rounded-full border border-border px-3.5 py-1.5 text-xs font-semibold text-muted hover:border-danger hover:text-danger"
+          >
+            Borrar
+          </button>
+        </div>
       </div>
       <div className="flex flex-col gap-1.5">
         {routine.exercises.map((re) => (

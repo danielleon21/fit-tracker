@@ -34,6 +34,7 @@ function toDto(routine: RoutineWithExercises) {
       targetSets: re.targetSets,
       targetReps: re.targetReps,
       targetWeightKg: re.targetWeightKg?.toNumber() ?? null,
+      notes: re.notes,
       exercise: re.exercise,
     })),
   };
@@ -46,6 +47,7 @@ function toExerciseCreateInput(exercises: CreateRoutineInput["exercises"]) {
     targetSets: ex.targetSets ?? null,
     targetReps: ex.targetReps ?? null,
     targetWeightKg: ex.targetWeightKg ?? null,
+    notes: ex.notes ?? null,
   }));
 }
 
@@ -104,5 +106,14 @@ export const routineRepository = {
     if (!existing) return false;
     await prisma.routine.delete({ where: { id } });
     return true;
+  },
+
+  async findScheduledForWeekday(userId: string, weekday: number) {
+    const routines = await prisma.routine.findMany({
+      where: { userId, daysOfWeek: { has: weekday } },
+      include: routineInclude,
+      orderBy: { createdAt: "asc" },
+    });
+    return routines.map(toDto);
   },
 };

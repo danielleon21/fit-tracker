@@ -4,19 +4,22 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
+import { useRoutines } from "@/hooks/useRoutines";
 import { EmptyState } from "@/components/dashboard/EmptyState";
+import { RoutineListItem } from "@/components/gimnasio/RoutineListItem";
 
 export default function GimnasioPage() {
   const router = useRouter();
-  const { user, isLoading } = useAuth();
+  const { user, isLoading: isAuthLoading } = useAuth();
+  const { routines, isLoading: isRoutinesLoading, removeRoutine } = useRoutines();
 
   useEffect(() => {
-    if (!isLoading && !user) {
+    if (!isAuthLoading && !user) {
       router.replace("/login");
     }
-  }, [isLoading, user, router]);
+  }, [isAuthLoading, user, router]);
 
-  if (isLoading || !user) {
+  if (isAuthLoading || !user) {
     return <div className="flex min-h-screen items-center justify-center bg-bg text-sm text-muted">Cargando…</div>;
   }
 
@@ -33,12 +36,34 @@ export default function GimnasioPage() {
           </Link>
         </div>
 
-        <div className="rounded-2xl border border-border bg-surface p-4">
-          <EmptyState
-            title="Gym Tracker en construcción"
-            description="Pronto vas a poder crear tus rutinas, ver tu progreso por ejercicio y tu historial de entrenamientos aquí."
-          />
+        <div className="flex items-center justify-between">
+          <div className="font-serif text-lg font-semibold text-ink">Tus rutinas</div>
+          <Link
+            href="/gimnasio/rutinas/nueva"
+            className="rounded-full bg-accent px-4 py-2 text-sm font-bold text-accent-ink hover:bg-accent-hover"
+          >
+            + Crear rutina
+          </Link>
         </div>
+
+        {isRoutinesLoading ? (
+          <div className="rounded-2xl border border-border bg-surface p-8 text-center text-sm text-muted">
+            Cargando tus rutinas…
+          </div>
+        ) : routines.length === 0 ? (
+          <div className="rounded-2xl border border-border bg-surface p-4">
+            <EmptyState
+              title="Aún no tienes rutinas"
+              description="Crea tu primera rutina para empezar a programar tus días de entrenamiento."
+            />
+          </div>
+        ) : (
+          <div className="flex flex-col gap-4">
+            {routines.map((routine) => (
+              <RoutineListItem key={routine.id} routine={routine} onDelete={removeRoutine} />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

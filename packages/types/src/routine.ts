@@ -1,4 +1,5 @@
 import type { ExerciseSummary } from "./exercise";
+import type { WorkoutSession } from "./workout";
 
 export interface RoutineExercise {
   id: string;
@@ -6,6 +7,7 @@ export interface RoutineExercise {
   targetSets: number | null;
   targetReps: number | null;
   targetWeightKg: number | null;
+  notes: string | null;
   exercise: ExerciseSummary;
 }
 
@@ -25,6 +27,7 @@ export interface RoutineExerciseInput {
   targetSets?: number | null;
   targetReps?: number | null;
   targetWeightKg?: number | null;
+  notes?: string | null;
 }
 
 export interface CreateRoutineInput {
@@ -34,3 +37,8 @@ export interface CreateRoutineInput {
 }
 
 export type UpdateRoutineInput = CreateRoutineInput;
+
+export interface TodayRoutineStatus {
+  routine: Routine;
+  session: WorkoutSession | null;
+}

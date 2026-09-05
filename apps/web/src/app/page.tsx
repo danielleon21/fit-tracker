@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { useProgress } from "@/hooks/useProgress";
+import { useTodayRoutine } from "@/hooks/useTodayRoutine";
 import { AppHeader } from "@/components/dashboard/AppHeader";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { DeltaPill } from "@/components/dashboard/DeltaPill";
@@ -24,6 +25,7 @@ export default function DashboardPage() {
   const router = useRouter();
   const { user, isLoading: isAuthLoading, logout } = useAuth();
   const { entries, isLoading: isProgressLoading, addEntry, updateEntry } = useProgress();
+  const { statuses: routineStatuses, isLoading: isRoutineLoading, markDone, undo } = useTodayRoutine();
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
   useEffect(() => {
@@ -136,7 +138,24 @@ export default function DashboardPage() {
           <MacrosCard />
         </div>
 
-        <RoutineCard />
+        {isRoutineLoading ? (
+          <div className="rounded-2xl border border-border bg-surface p-8 text-center text-sm text-muted">
+            Cargando tu rutina de hoy…
+          </div>
+        ) : routineStatuses.length === 0 ? (
+          <div className="rounded-2xl border border-border bg-surface p-4">
+            <EmptyState
+              title="No hay una rutina programada para hoy"
+              description="Cuando agregues una rutina para este día de la semana vas a verla aquí."
+            />
+          </div>
+        ) : (
+          <div className="flex flex-col gap-5">
+            {routineStatuses.map((status) => (
+              <RoutineCard key={status.routine.id} status={status} onMarkDone={markDone} onUndo={undo} />
+            ))}
+          </div>
+        )}
       </div>
 
       {showOnboarding ? <ProgressOnboardingModal onSubmit={handleOnboardingSubmit} /> : null}

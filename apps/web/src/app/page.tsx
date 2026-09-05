@@ -19,7 +19,7 @@ function delta(current: number | null, previous: number | null) {
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { user, isLoading: isAuthLoading } = useAuth();
+  const { user, isLoading: isAuthLoading, logout } = useAuth();
   const { entries, isLoading: isProgressLoading } = useProgress();
 
   useEffect(() => {
@@ -46,7 +46,7 @@ export default function DashboardPage() {
       <div className="pointer-events-none absolute -right-36 -top-44 h-[480px] w-[480px] rounded-full bg-blob-violet blur-[80px]" />
 
       <div className="relative flex flex-col gap-6 p-6 sm:p-12">
-        <AppHeader userInitial={userInitial} />
+        <AppHeader userInitial={userInitial} userLabel={user.name ?? user.email} onLogout={logout} />
 
         {isProgressLoading ? (
           <div className="rounded-2xl border border-border bg-surface p-8 text-center text-sm text-muted">

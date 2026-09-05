@@ -84,3 +84,65 @@ model ProgressEntry {
   @@unique([userId, date])
   @@map("progress_entries")
 }
+
+// --- Catalogo de ejercicios (Gym Tracker) ---
+// Importado una vez desde la API publica de wger (CC-BY-SA 3.0, atribuir si se
+// expone publicamente). No se consulta a wger en vivo: ver
+// packages/database/scripts/import-wger-exercises.ts. wgerId es el id original
+// en wger, usado como llave de reconciliacion para poder re-importar sin duplicar.
+
+model ExerciseCategory {
+  id     String @id @default(cuid())
+  wgerId Int    @unique @map("wger_id")
+  name   String
+
+  exercises Exercise[]
+
+  @@map("exercise_categories")
+}
+
+model Muscle {
+  id                String  @id @default(cuid())
+  wgerId            Int     @unique @map("wger_id")
+  name              String
+  nameEn            String? @map("name_en")
+  isFront           Boolean @map("is_front")
+  imageUrlMain      String? @map("image_url_main")
+  imageUrlSecondary String? @map("image_url_secondary")
+
+  primaryFor   Exercise[] @relation("ExercisePrimaryMuscles")
+  secondaryFor Exercise[] @relation("ExerciseSecondaryMuscles")
+
+  @@map("muscles")
+}
+
+model Equipment {
+  id     String @id @default(cuid())
+  wgerId Int    @unique @map("wger_id")
+  name   String
+
+  exercises Exercise[]
+
+  @@map("equipment")
+}
+
+model Exercise {
+  id            String   @id @default(cuid())
+  wgerId        Int      @unique @map("wger_id")
+  uuid          String   @unique
+  categoryId    String?  @map("category_id")
+  name          String
+  nameEn        String?  @map("name_en")
+  description   String?  @db.Text
+  descriptionEn String?  @map("description_en") @db.Text
+  imageUrl      String?  @map("image_url")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  category         ExerciseCategory? @relation(fields: [categoryId], references: [id])
+  primaryMuscles   Muscle[]          @relation("ExercisePrimaryMuscles")
+  secondaryMuscles Muscle[]          @relation("ExerciseSecondaryMuscles")
+  equipment        Equipment[]
+
+  @@map("exercises")
+}

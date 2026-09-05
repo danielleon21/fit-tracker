@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 
 interface AppHeaderProps {
   userInitial: string;
@@ -55,6 +56,14 @@ export function AppHeader({ userInitial, userLabel, onOpenProfile, onLogout }: A
               className="absolute right-0 top-[46px] z-10 w-52 rounded-xl border border-border bg-surface p-2 shadow-[0_12px_32px_rgba(0,0,0,0.45)]"
             >
               <div className="truncate px-2.5 py-1.5 text-xs text-muted">{userLabel}</div>
+              <Link
+                href="/gimnasio"
+                role="menuitem"
+                onClick={() => setIsMenuOpen(false)}
+                className="block w-full rounded-lg px-2.5 py-2 text-left text-sm font-semibold text-ink hover:bg-surface-2"
+              >
+                Gimnasio
+              </Link>
               <button
                 type="button"
                 role="menuitem"

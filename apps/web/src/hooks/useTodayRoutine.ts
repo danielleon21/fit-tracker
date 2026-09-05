@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import type { TodayRoutineStatus } from "@fit-tracker/types";
+import type { TodayRoutineStatus, WorkoutSetLogInput } from "@fit-tracker/types";
 import { apiFetch } from "@/lib/api-client";
 
 export function useTodayRoutine() {
@@ -22,12 +22,24 @@ export function useTodayRoutine() {
     }
   }, []);
 
-  const markDone = useCallback(
-    async (routineId: string) => {
+  const logSession = useCallback(
+    async (routineId: string, sets: WorkoutSetLogInput[]) => {
       const todayIso = new Date().toISOString().slice(0, 10);
       await apiFetch("/api/workout-sessions", {
         method: "POST",
-        body: JSON.stringify({ date: todayIso, routineId }),
+        body: JSON.stringify({ date: todayIso, routineId, sets }),
+      });
+      await refresh();
+    },
+    [refresh],
+  );
+
+  const updateSession = useCallback(
+    async (sessionId: string, routineId: string, sets: WorkoutSetLogInput[]) => {
+      const todayIso = new Date().toISOString().slice(0, 10);
+      await apiFetch(`/api/workout-sessions/${sessionId}`, {
+        method: "PUT",
+        body: JSON.stringify({ date: todayIso, routineId, sets }),
       });
       await refresh();
     },
@@ -46,5 +58,5 @@ export function useTodayRoutine() {
     refresh();
   }, [refresh]);
 
-  return { statuses, isLoading, error, markDone, undo, refresh };
+  return { statuses, isLoading, error, logSession, updateSession, undo, refresh };
 }

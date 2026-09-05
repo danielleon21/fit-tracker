@@ -26,3 +26,9 @@ export class UnauthorizedError extends DomainError {
     super(message, "UNAUTHORIZED", 401);
   }
 }
+
+export class ConflictError extends DomainError {
+  constructor(message = "Resource already exists") {
+    super(message, "CONFLICT", 409);
+  }
+}

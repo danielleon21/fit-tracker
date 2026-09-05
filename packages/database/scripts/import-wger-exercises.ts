@@ -13,6 +13,7 @@
 // exerciseinfo y se filtra el array `translations` en memoria.
 
 import { PrismaClient } from "@prisma/client";
+import { WGER_EXERCISE_OVERRIDES } from "./wger-overrides";
 
 const prisma = new PrismaClient();
 
@@ -185,16 +186,19 @@ async function run() {
 
     const mainImage = ex.images.find((image) => image.is_main) ?? ex.images[0] ?? null;
 
-    const nameEn = cleanText(en?.name);
-    const description = cleanText(es?.description) ?? cleanText(en?.description);
-    const descriptionEn = cleanText(en?.description);
+    const override = WGER_EXERCISE_OVERRIDES[ex.id];
+
+    const finalName = override?.name ?? name;
+    const nameEn = override?.nameEn ?? cleanText(en?.name);
+    const description = override?.description ?? cleanText(es?.description) ?? cleanText(en?.description);
+    const descriptionEn = override?.descriptionEn ?? cleanText(en?.description);
 
     await prisma.exercise.upsert({
       where: { wgerId: ex.id },
       update: {
         uuid: ex.uuid,
         categoryId,
-        name,
+        name: finalName,
         nameEn,
         description,
         descriptionEn,
@@ -207,7 +211,7 @@ async function run() {
         wgerId: ex.id,
         uuid: ex.uuid,
         categoryId,
-        name,
+        name: finalName,
         nameEn,
         description,
         descriptionEn,

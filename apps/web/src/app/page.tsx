@@ -3,32 +3,43 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
-import { useProgressSummary } from "@/hooks/useProgressSummary";
+import { useProgress } from "@/hooks/useProgress";
 import { AppHeader } from "@/components/dashboard/AppHeader";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { DeltaPill } from "@/components/dashboard/DeltaPill";
+import { EmptyState } from "@/components/dashboard/EmptyState";
 import { CaloriesCard } from "@/components/dashboard/CaloriesCard";
 import { MacrosCard } from "@/components/dashboard/MacrosCard";
 import { RoutineCard } from "@/components/dashboard/RoutineCard";
 
+function delta(current: number | null, previous: number | null) {
+  if (current == null || previous == null) return null;
+  return current - previous;
+}
+
 export default function DashboardPage() {
   const router = useRouter();
-  const { user, isLoading } = useAuth();
-  const progress = useProgressSummary();
+  const { user, isLoading: isAuthLoading } = useAuth();
+  const { entries, isLoading: isProgressLoading } = useProgress();
 
   useEffect(() => {
-    if (!isLoading && !user) {
+    if (!isAuthLoading && !user) {
       router.replace("/login");
     }
-  }, [isLoading, user, router]);
+  }, [isAuthLoading, user, router]);
 
-  if (isLoading || !user) {
+  if (isAuthLoading || !user) {
     return <div className="flex min-h-screen items-center justify-center bg-bg text-sm text-muted">Cargando…</div>;
   }
 
-  const idealDiff = progress.idealWeightKg - progress.currentWeightKg;
-  const idealDiffLabel = `${idealDiff > 0 ? "+" : ""}${idealDiff.toFixed(1)} kg para tu objetivo`;
+  const latest = entries[0] ?? null;
+  const previous = entries[1] ?? null;
   const userInitial = (user.name ?? user.email)[0]?.toUpperCase() ?? "?";
+
+  const weightDelta = latest ? delta(latest.weightKg, previous?.weightKg ?? null) : null;
+  const bodyFatDelta = latest ? delta(latest.bodyFatPct, previous?.bodyFatPct ?? null) : null;
+  const muscleDelta = latest ? delta(latest.muscleMassPct, previous?.muscleMassPct ?? null) : null;
+  const idealDiff = latest?.idealWeightKg != null ? latest.idealWeightKg - latest.weightKg : null;
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-bg">
@@ -37,32 +48,68 @@ export default function DashboardPage() {
       <div className="relative flex flex-col gap-6 p-6 sm:p-12">
         <AppHeader userInitial={userInitial} />
 
-        <div className="grid grid-cols-2 gap-5 lg:grid-cols-4">
-          <StatCard label="Peso actual" value={progress.currentWeightKg.toFixed(1)} unit="kg">
-            <DeltaPill direction={progress.weightDeltaKg <= 0 ? "up" : "down"}>
-              {progress.weightDeltaKg > 0 ? "+" : ""}
-              {progress.weightDeltaKg.toFixed(1)} kg esta semana
-            </DeltaPill>
-          </StatCard>
+        {isProgressLoading ? (
+          <div className="rounded-2xl border border-border bg-surface p-8 text-center text-sm text-muted">
+            Cargando tu progreso…
+          </div>
+        ) : !latest ? (
+          <div className="rounded-2xl border border-border bg-surface p-4">
+            <EmptyState
+              title="Aún no tienes registros de progreso"
+              description="Cuando registres tu peso, % de grasa y músculo vas a ver tus estadísticas aquí."
+            />
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-5 lg:grid-cols-4">
+            <StatCard label="Peso actual" value={latest.weightKg.toFixed(1)} unit="kg">
+              {weightDelta != null ? (
+                <DeltaPill direction={weightDelta <= 0 ? "up" : "down"}>
+                  {weightDelta > 0 ? "+" : ""}
+                  {weightDelta.toFixed(1)} kg desde tu último registro
+                </DeltaPill>
+              ) : null}
+            </StatCard>
 
-          <StatCard label="% Grasa" value={progress.bodyFatPct.toFixed(1)} unit="%">
-            <DeltaPill direction={progress.bodyFatDeltaPct <= 0 ? "up" : "down"}>
-              {progress.bodyFatDeltaPct > 0 ? "+" : ""}
-              {progress.bodyFatDeltaPct.toFixed(1)}% esta semana
-            </DeltaPill>
-          </StatCard>
+            <StatCard
+              label="% Grasa"
+              value={latest.bodyFatPct != null ? latest.bodyFatPct.toFixed(1) : "—"}
+              unit={latest.bodyFatPct != null ? "%" : ""}
+            >
+              {bodyFatDelta != null ? (
+                <DeltaPill direction={bodyFatDelta <= 0 ? "up" : "down"}>
+                  {bodyFatDelta > 0 ? "+" : ""}
+                  {bodyFatDelta.toFixed(1)}% desde tu último registro
+                </DeltaPill>
+              ) : null}
+            </StatCard>
 
-          <StatCard label="Músculo" value={progress.musclePct.toFixed(1)} unit="%">
-            <DeltaPill direction={progress.muscleDeltaPct >= 0 ? "up" : "down"}>
-              {progress.muscleDeltaPct > 0 ? "+" : ""}
-              {progress.muscleDeltaPct.toFixed(1)}% esta semana
-            </DeltaPill>
-          </StatCard>
+            <StatCard
+              label="Músculo"
+              value={latest.muscleMassPct != null ? latest.muscleMassPct.toFixed(1) : "—"}
+              unit={latest.muscleMassPct != null ? "%" : ""}
+            >
+              {muscleDelta != null ? (
+                <DeltaPill direction={muscleDelta >= 0 ? "up" : "down"}>
+                  {muscleDelta > 0 ? "+" : ""}
+                  {muscleDelta.toFixed(1)}% desde tu último registro
+                </DeltaPill>
+              ) : null}
+            </StatCard>
 
-          <StatCard label="Peso ideal" value={progress.idealWeightKg.toFixed(1)} unit="kg">
-            <DeltaPill direction="neutral">{idealDiffLabel}</DeltaPill>
-          </StatCard>
-        </div>
+            <StatCard
+              label="Peso ideal"
+              value={latest.idealWeightKg != null ? latest.idealWeightKg.toFixed(1) : "—"}
+              unit={latest.idealWeightKg != null ? "kg" : ""}
+            >
+              {idealDiff != null ? (
+                <DeltaPill direction="neutral">
+                  {idealDiff > 0 ? "+" : ""}
+                  {idealDiff.toFixed(1)} kg para tu objetivo
+                </DeltaPill>
+              ) : null}
+            </StatCard>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
           <CaloriesCard />

@@ -73,6 +73,7 @@ model ProgressEntry {
   userId         String   @map("user_id")
   date           DateTime @db.Date
   weightKg       Decimal  @map("weight_kg") @db.Decimal(5, 2)
+  idealWeightKg  Decimal? @map("ideal_weight_kg") @db.Decimal(5, 2)
   heightCm       Decimal? @map("height_cm") @db.Decimal(5, 2)
   bodyFatPct     Decimal? @map("body_fat_pct") @db.Decimal(4, 2)
   muscleMassPct  Decimal? @map("muscle_mass_pct") @db.Decimal(4, 2)

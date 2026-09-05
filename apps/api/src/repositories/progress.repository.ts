@@ -1,17 +1,36 @@
 import { prisma } from "@fit-tracker/database";
+import type { ProgressEntry as PrismaProgressEntry } from "@fit-tracker/database";
 import type { CreateProgressEntryInput } from "@fit-tracker/types";
 
+// Prisma serializa los campos Decimal como string en JSON (via Decimal#toJSON).
+// Los convertimos a number aqui para que la respuesta cumpla el contrato real de
+// ProgressEntry (weightKg: number, etc.) en vez de dejar que el consumidor lo descubra.
+function toDto(entry: PrismaProgressEntry) {
+  return {
+    ...entry,
+    date: entry.date.toISOString(),
+    weightKg: entry.weightKg.toNumber(),
+    idealWeightKg: entry.idealWeightKg?.toNumber() ?? null,
+    heightCm: entry.heightCm?.toNumber() ?? null,
+    bodyFatPct: entry.bodyFatPct?.toNumber() ?? null,
+    muscleMassPct: entry.muscleMassPct?.toNumber() ?? null,
+    createdAt: entry.createdAt.toISOString(),
+  };
+}
+
 export const progressRepository = {
-  findManyByUser(userId: string) {
-    return prisma.progressEntry.findMany({
+  async findManyByUser(userId: string) {
+    const entries = await prisma.progressEntry.findMany({
       where: { userId },
       orderBy: { date: "desc" },
     });
+    return entries.map(toDto);
   },
 
-  create(userId: string, input: CreateProgressEntryInput) {
-    return prisma.progressEntry.create({
-      data: { userId, ...input },
+  async create(userId: string, input: CreateProgressEntryInput) {
+    const entry = await prisma.progressEntry.create({
+      data: { userId, ...input, date: new Date(input.date) },
     });
+    return toDto(entry);
   },
 };

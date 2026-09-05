@@ -9,6 +9,7 @@ import { UnauthorizedError } from "@/errors/domain-errors";
 const createProgressEntrySchema = z.object({
   date: z.string().date(),
   weightKg: z.number().positive(),
+  idealWeightKg: z.number().positive().nullable().optional(),
   heightCm: z.number().positive().nullable().optional(),
   bodyFatPct: z.number().min(0).max(100).nullable().optional(),
   muscleMassPct: z.number().min(0).max(100).nullable().optional(),
@@ -37,6 +38,7 @@ export async function POST(request: NextRequest) {
     const entry = await progressService.addEntry(userId, {
       date: body.date,
       weightKg: body.weightKg,
+      idealWeightKg: body.idealWeightKg ?? null,
       heightCm: body.heightCm ?? null,
       bodyFatPct: body.bodyFatPct ?? null,
       muscleMassPct: body.muscleMassPct ?? null,

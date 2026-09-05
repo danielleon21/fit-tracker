@@ -1,25 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { z } from "zod";
-import { authConfig } from "@/lib/auth.config";
+import { createProgressEntrySchema } from "@/lib/progress.schema";
+import { requireUserId } from "@/lib/require-user";
 import { progressService } from "@/services/progress.service";
 import { handleRouteError } from "@/middleware/error-handler";
-import { UnauthorizedError } from "@/errors/domain-errors";
-
-const createProgressEntrySchema = z.object({
-  date: z.string().date(),
-  weightKg: z.number().positive(),
-  idealWeightKg: z.number().positive().nullable().optional(),
-  heightCm: z.number().positive().nullable().optional(),
-  bodyFatPct: z.number().min(0).max(100).nullable().optional(),
-  muscleMassPct: z.number().min(0).max(100).nullable().optional(),
-});
-
-async function requireUserId() {
-  const session = await getServerSession(authConfig);
-  if (!session?.user?.id) throw new UnauthorizedError();
-  return session.user.id;
-}
 
 export async function GET() {
   try {

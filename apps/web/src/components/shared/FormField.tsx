@@ -1,11 +1,11 @@
 import type { InputHTMLAttributes } from "react";
 
-interface AuthFieldProps extends InputHTMLAttributes<HTMLInputElement> {
+interface FormFieldProps extends InputHTMLAttributes<HTMLInputElement> {
   label: string;
   hint?: string;
 }
 
-export function AuthField({ label, hint, id, ...inputProps }: AuthFieldProps) {
+export function FormField({ label, hint, id, ...inputProps }: FormFieldProps) {
   return (
     <div className="flex flex-col gap-1.5">
       <label htmlFor={id} className="text-[13px] font-semibold text-label">

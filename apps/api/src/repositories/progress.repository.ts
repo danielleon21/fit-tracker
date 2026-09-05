@@ -1,6 +1,6 @@
 import { prisma } from "@fit-tracker/database";
 import type { ProgressEntry as PrismaProgressEntry } from "@fit-tracker/database";
-import type { CreateProgressEntryInput } from "@fit-tracker/types";
+import type { CreateProgressEntryInput, UpdateProgressEntryInput } from "@fit-tracker/types";
 
 // Prisma serializa los campos Decimal como string en JSON (via Decimal#toJSON).
 // Los convertimos a number aqui para que la respuesta cumpla el contrato real de
@@ -31,6 +31,14 @@ export const progressRepository = {
     const entry = await prisma.progressEntry.create({
       data: { userId, ...input, date: new Date(input.date) },
     });
+    return toDto(entry);
+  },
+
+  async update(id: string, userId: string, input: UpdateProgressEntryInput) {
+    const existing = await prisma.progressEntry.findFirst({ where: { id, userId } });
+    if (!existing) return null;
+
+    const entry = await prisma.progressEntry.update({ where: { id }, data: input });
     return toDto(entry);
   },
 };

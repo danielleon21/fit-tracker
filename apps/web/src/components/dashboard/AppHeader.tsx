@@ -5,10 +5,11 @@ import { useEffect, useRef, useState } from "react";
 interface AppHeaderProps {
   userInitial: string;
   userLabel: string;
+  onOpenProfile: () => void;
   onLogout: () => void;
 }
 
-export function AppHeader({ userInitial, userLabel, onLogout }: AppHeaderProps) {
+export function AppHeader({ userInitial, userLabel, onOpenProfile, onLogout }: AppHeaderProps) {
   const [todayLabel, setTodayLabel] = useState("");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -54,6 +55,17 @@ export function AppHeader({ userInitial, userLabel, onLogout }: AppHeaderProps) 
               className="absolute right-0 top-[46px] z-10 w-52 rounded-xl border border-border bg-surface p-2 shadow-[0_12px_32px_rgba(0,0,0,0.45)]"
             >
               <div className="truncate px-2.5 py-1.5 text-xs text-muted">{userLabel}</div>
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => {
+                  setIsMenuOpen(false);
+                  onOpenProfile();
+                }}
+                className="w-full rounded-lg px-2.5 py-2 text-left text-sm font-semibold text-ink hover:bg-surface-2"
+              >
+                Perfil
+              </button>
               <button
                 type="button"
                 role="menuitem"

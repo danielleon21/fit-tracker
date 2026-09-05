@@ -11,3 +11,5 @@ export interface ProgressEntry {
 }
 
 export type CreateProgressEntryInput = Omit<ProgressEntry, "id" | "userId" | "createdAt">;
+
+export type UpdateProgressEntryInput = Omit<CreateProgressEntryInput, "date">;

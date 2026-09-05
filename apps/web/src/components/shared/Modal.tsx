@@ -6,9 +6,10 @@ interface ModalProps {
   title: string;
   children: React.ReactNode;
   onClose?: () => void;
+  widthClassName?: string;
 }
 
-export function Modal({ title, children, onClose }: ModalProps) {
+export function Modal({ title, children, onClose, widthClassName = "max-w-md" }: ModalProps) {
   useEffect(() => {
     if (!onClose) return undefined;
 
@@ -26,7 +27,7 @@ export function Modal({ title, children, onClose }: ModalProps) {
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className="flex w-full max-w-md flex-col gap-5 rounded-2xl border border-border bg-surface p-6 shadow-[0_24px_64px_rgba(0,0,0,0.5)]"
+        className={`flex w-full ${widthClassName} max-h-[90vh] flex-col gap-5 overflow-hidden rounded-2xl border border-border bg-surface p-6 shadow-[0_24px_64px_rgba(0,0,0,0.5)]`}
       >
         <div className="flex items-center justify-between">
           <h2 className="font-serif text-xl font-semibold text-ink">{title}</h2>
@@ -43,7 +44,7 @@ export function Modal({ title, children, onClose }: ModalProps) {
             </button>
           ) : null}
         </div>
-        {children}
+        <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto">{children}</div>
       </div>
     </div>
   );

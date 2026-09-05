@@ -3,7 +3,7 @@ import { z } from "zod";
 const workoutSetLogSchema = z.object({
   exerciseId: z.string().min(1),
   setNumber: z.number().int().positive(),
-  weightKg: z.number().positive().nullable().optional(),
+  weightKg: z.number().nonnegative().nullable().optional(),
   reps: z.number().int().positive().nullable().optional(),
 });
 

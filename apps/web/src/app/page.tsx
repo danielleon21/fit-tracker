@@ -25,7 +25,13 @@ export default function DashboardPage() {
   const router = useRouter();
   const { user, isLoading: isAuthLoading, logout } = useAuth();
   const { entries, isLoading: isProgressLoading, addEntry, updateEntry } = useProgress();
-  const { statuses: routineStatuses, isLoading: isRoutineLoading, markDone, undo } = useTodayRoutine();
+  const {
+    statuses: routineStatuses,
+    isLoading: isRoutineLoading,
+    logSession,
+    updateSession,
+    undo,
+  } = useTodayRoutine();
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
   useEffect(() => {
@@ -152,7 +158,13 @@ export default function DashboardPage() {
         ) : (
           <div className="flex flex-col gap-5">
             {routineStatuses.map((status) => (
-              <RoutineCard key={status.routine.id} status={status} onMarkDone={markDone} onUndo={undo} />
+              <RoutineCard
+                key={status.routine.id}
+                status={status}
+                onLogSession={logSession}
+                onUpdateSession={updateSession}
+                onUndo={undo}
+              />
             ))}
           </div>
         )}

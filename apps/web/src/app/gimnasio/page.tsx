@@ -5,13 +5,19 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
 import { useRoutines } from "@/hooks/useRoutines";
+import { useWorkoutSessions } from "@/hooks/useWorkoutSessions";
 import { EmptyState } from "@/components/dashboard/EmptyState";
 import { RoutineListItem } from "@/components/gimnasio/RoutineListItem";
+
+function todayIso() {
+  return new Date().toISOString().slice(0, 10);
+}
 
 export default function GimnasioPage() {
   const router = useRouter();
   const { user, isLoading: isAuthLoading } = useAuth();
   const { routines, isLoading: isRoutinesLoading, removeRoutine } = useRoutines();
+  const { sessions, logSession, updateSession, undo } = useWorkoutSessions(todayIso());
 
   useEffect(() => {
     if (!isAuthLoading && !user) {
@@ -60,7 +66,15 @@ export default function GimnasioPage() {
         ) : (
           <div className="flex flex-col gap-4">
             {routines.map((routine) => (
-              <RoutineListItem key={routine.id} routine={routine} onDelete={removeRoutine} />
+              <RoutineListItem
+                key={routine.id}
+                routine={routine}
+                existingSession={sessions.find((session) => session.routineId === routine.id) ?? null}
+                onDelete={removeRoutine}
+                onLogSession={logSession}
+                onUpdateSession={updateSession}
+                onUndo={undo}
+              />
             ))}
           </div>
         )}

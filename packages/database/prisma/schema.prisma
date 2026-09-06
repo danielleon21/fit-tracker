@@ -3,8 +3,14 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  // Solo la usan `prisma migrate`/`db push` (no el cliente en runtime). En
+  // local es igual a DATABASE_URL; en producción con Supabase, DATABASE_URL
+  // es la conexión pooleada (pgbouncer, la que usa la app en Vercel) y
+  // DIRECT_URL es la conexión directa que necesitan las migraciones — el
+  // modo "transaction" del pooler no soporta lo que Migrate necesita.
+  directUrl = env("DIRECT_URL")
 }
 
 // --- Auth.js (NextAuth) + PrismaAdapter ---

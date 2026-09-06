@@ -6,18 +6,15 @@ import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
 import { useRoutines } from "@/hooks/useRoutines";
 import { useWorkoutSessions } from "@/hooks/useWorkoutSessions";
+import { todayIsoLocal } from "@/lib/date";
 import { EmptyState } from "@/components/dashboard/EmptyState";
 import { RoutineListItem } from "@/components/gimnasio/RoutineListItem";
-
-function todayIso() {
-  return new Date().toISOString().slice(0, 10);
-}
 
 export default function GimnasioPage() {
   const router = useRouter();
   const { user, isLoading: isAuthLoading } = useAuth();
   const { routines, isLoading: isRoutinesLoading, removeRoutine } = useRoutines();
-  const { sessions, logSession, updateSession, undo } = useWorkoutSessions(todayIso());
+  const { sessions, logSession, updateSession, undo } = useWorkoutSessions(todayIsoLocal());
 
   useEffect(() => {
     if (!isAuthLoading && !user) {
@@ -39,6 +36,16 @@ export default function GimnasioPage() {
           </div>
           <Link href="/" className="text-sm font-semibold text-accent hover:text-accent-hover hover:underline">
             ← Volver al dashboard
+          </Link>
+        </div>
+
+        <div className="flex gap-2">
+          <span className="rounded-full bg-accent px-4 py-1.5 text-sm font-bold text-accent-ink">Rutinas</span>
+          <Link
+            href="/gimnasio/progreso"
+            className="rounded-full border border-border-2 px-4 py-1.5 text-sm font-semibold text-muted hover:text-ink"
+          >
+            Progreso
           </Link>
         </div>
 

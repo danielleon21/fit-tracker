@@ -17,3 +17,7 @@ const routineFieldsSchema = z.object({
 
 export const createRoutineSchema = routineFieldsSchema;
 export const updateRoutineSchema = routineFieldsSchema;
+
+export const todayRoutinesQuerySchema = z.object({
+  date: z.string().date().optional(),
+});

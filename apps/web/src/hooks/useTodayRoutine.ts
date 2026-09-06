@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import type { TodayRoutineStatus, WorkoutSetLogInput } from "@fit-tracker/types";
 import { apiFetch } from "@/lib/api-client";
+import { todayIsoLocal } from "@/lib/date";
 
 export function useTodayRoutine() {
   const [statuses, setStatuses] = useState<TodayRoutineStatus[]>([]);
@@ -13,7 +14,9 @@ export function useTodayRoutine() {
     setIsLoading(true);
     setError(null);
     try {
-      const { data } = await apiFetch<{ data: TodayRoutineStatus[] }>("/api/routines/today");
+      const { data } = await apiFetch<{ data: TodayRoutineStatus[] }>(
+        `/api/routines/today?date=${todayIsoLocal()}`,
+      );
       setStatuses(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error desconocido");
@@ -24,7 +27,7 @@ export function useTodayRoutine() {
 
   const logSession = useCallback(
     async (routineId: string, sets: WorkoutSetLogInput[]) => {
-      const todayIso = new Date().toISOString().slice(0, 10);
+      const todayIso = todayIsoLocal();
       await apiFetch("/api/workout-sessions", {
         method: "POST",
         body: JSON.stringify({ date: todayIso, routineId, sets }),
@@ -36,7 +39,7 @@ export function useTodayRoutine() {
 
   const updateSession = useCallback(
     async (sessionId: string, routineId: string, sets: WorkoutSetLogInput[]) => {
-      const todayIso = new Date().toISOString().slice(0, 10);
+      const todayIso = todayIsoLocal();
       await apiFetch(`/api/workout-sessions/${sessionId}`, {
         method: "PUT",
         body: JSON.stringify({ date: todayIso, routineId, sets }),

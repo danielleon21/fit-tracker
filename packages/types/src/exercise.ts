@@ -29,3 +29,17 @@ export interface Exercise extends ExerciseSummary {
   secondaryMuscles: MuscleSummary[];
   equipment: EquipmentSummary[];
 }
+
+export interface ExerciseProgressSet {
+  setNumber: number;
+  weightKg: number | null;
+  reps: number | null;
+}
+
+export interface ExerciseProgressEntry {
+  sessionId: string;
+  date: string;
+  routineId: string | null;
+  routineName: string | null;
+  sets: ExerciseProgressSet[];
+}

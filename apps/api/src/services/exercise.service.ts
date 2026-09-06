@@ -12,6 +12,15 @@ export const exerciseService = {
     return exercise;
   },
 
+  listTrained(userId: string) {
+    return exerciseRepository.findTrained(userId);
+  },
+
+  async getProgress(id: string, userId: string) {
+    await this.getById(id);
+    return exerciseRepository.findProgress(id, userId);
+  },
+
   async assertAllExist(exerciseIds: string[]) {
     const uniqueIds = [...new Set(exerciseIds)];
     if (uniqueIds.length === 0) return;

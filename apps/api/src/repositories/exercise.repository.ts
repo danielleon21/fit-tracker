@@ -1,4 +1,5 @@
 import { prisma } from "@fit-tracker/database";
+import type { ExerciseProgressEntry } from "@fit-tracker/types";
 
 const SEARCH_LIMIT = 50;
 
@@ -77,5 +78,52 @@ export const exerciseRepository = {
   async countByIds(ids: string[]) {
     if (ids.length === 0) return 0;
     return prisma.exercise.count({ where: { id: { in: ids } } });
+  },
+
+  // Solo ejercicios con al menos un set registrado por el usuario — evita
+  // mostrar los ~870 ejercicios del catálogo cuando la mayoría nunca se han entrenado.
+  findTrained(userId: string) {
+    return prisma.exercise.findMany({
+      where: { workoutSetLogs: { some: { session: { userId } } } },
+      select: summarySelect,
+      orderBy: { name: "asc" },
+    });
+  },
+
+  async findProgress(exerciseId: string, userId: string): Promise<ExerciseProgressEntry[]> {
+    const logs = await prisma.workoutSetLog.findMany({
+      where: { exerciseId, session: { userId } },
+      select: {
+        setNumber: true,
+        weightKg: true,
+        reps: true,
+        session: {
+          select: { id: true, date: true, routineId: true, routine: { select: { name: true } } },
+        },
+      },
+      orderBy: [{ session: { date: "asc" } }, { setNumber: "asc" }],
+    });
+
+    const bySession = new Map<string, ExerciseProgressEntry>();
+    for (const log of logs) {
+      const { session } = log;
+      let entry = bySession.get(session.id);
+      if (!entry) {
+        entry = {
+          sessionId: session.id,
+          date: session.date.toISOString(),
+          routineId: session.routineId,
+          routineName: session.routine?.name ?? null,
+          sets: [],
+        };
+        bySession.set(session.id, entry);
+      }
+      entry.sets.push({
+        setNumber: log.setNumber,
+        weightKg: log.weightKg?.toNumber() ?? null,
+        reps: log.reps,
+      });
+    }
+    return Array.from(bySession.values());
   },
 };

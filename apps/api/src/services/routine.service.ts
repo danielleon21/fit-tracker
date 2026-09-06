@@ -4,11 +4,14 @@ import { workoutSessionRepository } from "@/repositories/workout-session.reposit
 import { exerciseService } from "@/services/exercise.service";
 import { NotFoundError } from "@/errors/domain-errors";
 
-function today() {
-  // Mismo formato "YYYY-MM-DD" en UTC que usan los formularios de progreso y
-  // entrenamiento al mandar `date`, para que la comparacion contra la columna
-  // @db.Date coincida sin importar la zona horaria del servidor.
-  const isoDate = new Date().toISOString().slice(0, 10);
+function today(dateOverride?: string) {
+  // El servidor no conoce la zona horaria del usuario, asi que "hoy" segun
+  // su UTC casi siempre coincide con el dia local... excepto justo en las
+  // horas cercanas a la medianoche en husos detras de UTC (todo el
+  // continente americano), donde ya seria "manana" en UTC. Por eso el
+  // cliente manda su propia fecha local (`dateOverride`, "YYYY-MM-DD") y
+  // solo se cae al UTC del servidor como respaldo si no la mandó.
+  const isoDate = dateOverride ?? new Date().toISOString().slice(0, 10);
   return new Date(isoDate);
 }
 
@@ -40,8 +43,8 @@ export const routineService = {
     if (!deleted) throw new NotFoundError("Routine not found");
   },
 
-  async getTodayStatus(userId: string) {
-    const todayDate = today();
+  async getTodayStatus(userId: string, dateOverride?: string) {
+    const todayDate = today(dateOverride);
     const weekday = todayDate.getUTCDay(); // 0=domingo ... 6=sabado, igual que Routine.daysOfWeek
 
     const [routines, sessions] = await Promise.all([

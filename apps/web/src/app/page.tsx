@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { useProgress } from "@/hooks/useProgress";
 import { useTodayRoutine } from "@/hooks/useTodayRoutine";
+import { todayIsoLocal } from "@/lib/date";
 import { AppHeader } from "@/components/dashboard/AppHeader";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { DeltaPill } from "@/components/dashboard/DeltaPill";
@@ -50,7 +51,7 @@ export default function DashboardPage() {
   const showOnboarding = !isProgressLoading && entries.length === 0;
 
   async function handleOnboardingSubmit(values: ProgressFormValues) {
-    await addEntry({ date: new Date().toISOString().slice(0, 10), ...values });
+    await addEntry({ date: todayIsoLocal(), ...values });
   }
 
   async function handleProfileSubmit(values: ProgressFormValues) {

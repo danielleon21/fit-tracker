@@ -10,17 +10,21 @@ Para el contexto completo de arquitectura y decisiones de diseño, ver [CLAUDE.m
 |---|---|
 | **Auth** (registro, login, logout, sesión) | ✅ Funcionando de punta a punta |
 | **Progreso** (peso, % grasa, % músculo, peso ideal) | ✅ CRUD conectado a la base de datos real, con modal de primer ingreso y edición de perfil |
-| **Dashboard** (`/`) | ✅ Muestra progreso real; calorías, macros y rutina del día están en *empty state* (esperando los módulos de abajo) |
-| **Gym Tracker** (rutinas, catálogo de ejercicios wger, heatmap) | ⏳ No implementado |
+| **Gym Tracker** (rutinas, catálogo de ejercicios wger, modal de entrenamiento, progreso por ejercicio, histórico + heatmap) | ✅ Completo |
+| **Dashboard** (`/`) | ✅ Muestra progreso y la rutina de hoy reales; calorías y macros siguen en *empty state* (esperando Nutrition Tracker) |
 | **Nutrition Tracker** (PDFs de InBody/nutrióloga, macros, tracking diario) | ⏳ No implementado |
 | **Peso ideal vía import de PDF de InBody** | ⏳ Pendiente — hoy se ingresa a mano en el formulario de Progreso |
+| **Deploy a producción** | ⏳ En preparación — ver [Deploy a producción](#deploy-a-producción) |
 
 ### Rutas y endpoints ya implementados
 
-- **Frontend (`apps/web`)**: `/login`, `/registro`, `/` (dashboard, requiere sesión)
+- **Frontend (`apps/web`)**: `/login`, `/registro`, `/` (dashboard), `/gimnasio` (rutinas), `/gimnasio/rutinas/nueva`, `/gimnasio/rutinas/:id/editar`, `/gimnasio/progreso`, `/gimnasio/historico` — todas requieren sesión salvo login/registro
 - **Backend (`apps/api`)**:
   - `POST /api/auth/register`, `POST /api/auth/login`, `POST /api/auth/logout`, `GET /api/auth/session` (vía NextAuth)
-  - `GET /api/progress`, `POST /api/progress`, `PUT /api/progress/:id`
+  - `GET/POST /api/progress`, `PUT /api/progress/:id`
+  - `GET /api/exercises` (búsqueda), `GET /api/exercises/:id`, `GET /api/exercises/trained`, `GET /api/exercises/:id/progress`
+  - `GET/POST /api/routines`, `GET/PUT/DELETE /api/routines/:id`, `GET /api/routines/today`
+  - `GET/POST /api/workout-sessions`, `GET/PUT/DELETE /api/workout-sessions/:id`
 
 ## Stack
 
@@ -114,19 +118,21 @@ fit-tracker/
 | `pnpm typecheck` | `tsc --noEmit` en todos los paquetes |
 | `pnpm format` | Prettier sobre todo el repo |
 
-Dentro de `packages/database` también hay `pnpm db:migrate` (crea/aplica migraciones), `pnpm db:generate` (regenera el cliente de Prisma) y `pnpm db:studio` (abre Prisma Studio para ver/editar datos a mano).
+Dentro de `packages/database` también hay `pnpm db:migrate` (crea/aplica migraciones en local), `pnpm db:deploy` (aplica migraciones existentes sin crear nuevas — para producción), `pnpm db:generate` (regenera el cliente de Prisma), `pnpm db:studio` (abre Prisma Studio) e `pnpm import:wger` (importa el catálogo de ejercicios, una sola vez).
 
 ## Variables de entorno
 
 | Variable | Vive en | Motivo |
 |---|---|---|
-| `DATABASE_URL` | `packages/database`, `apps/api` | Prisma solo corre en `apps/api` |
+| `DATABASE_URL` | `packages/database`, `apps/api` | Prisma solo corre en `apps/api`. En local, igual que `DIRECT_URL`; en producción con Supabase, es la conexión **pooleada** |
+| `DIRECT_URL` | `packages/database` | Solo la usan `prisma migrate`/`db push`. En local, igual que `DATABASE_URL`; en producción, la conexión **directa** de Supabase (ver [Deploy](#deploy-a-producción)) |
 | `NEXTAUTH_SECRET` | `apps/api` | Firma de tokens de sesión |
 | `NEXTAUTH_URL` | `apps/api` | URL pública de `apps/api` (`http://localhost:3001` en local) |
 | `WEB_APP_URL` | `apps/api` | Origen de `apps/web`, usado para las cabeceras CORS |
-| `AUTH_COOKIE_DOMAIN` | `apps/api` | Vacío en local (cookie host-only); dominio raíz compartido en producción |
-| `WGER_API_KEY` / `USDA_API_KEY` / `EDAMAM_APP_ID` / `EDAMAM_APP_KEY` / `ANTHROPIC_API_KEY` / `SUPABASE_URL` / `SUPABASE_SERVICE_KEY` | `apps/api` | Para los módulos de Gym Tracker/Nutrition Tracker — no implementados aún, pueden quedar vacías |
-| `NEXT_PUBLIC_API_URL` | `apps/web` | Única variable que necesita el frontend — URL de `apps/api` |
+| `AUTH_COOKIE_DOMAIN` | `apps/api` | Vacío en local **y** en producción sin dominio propio (cookie host-only); dominio raíz compartido solo si ya tienes dominio |
+| `WGER_API_KEY` / `USDA_API_KEY` / `EDAMAM_APP_ID` / `EDAMAM_APP_KEY` / `ANTHROPIC_API_KEY` / `SUPABASE_URL` / `SUPABASE_SERVICE_KEY` | `apps/api` | Para Nutrition Tracker — no implementado aún, pueden quedar vacías |
+| `NEXT_PUBLIC_API_URL` | `apps/web` | URL de `apps/api` para el navegador. Vacía en producción sin dominio propio (rutas relativas, ver [Deploy](#deploy-a-producción)) |
+| `API_ORIGIN` | `apps/web` | Solo en producción sin dominio propio: dominio real del proyecto de Vercel de `apps/api`, usado por el rewrite en `next.config.mjs` |
 
 Ninguna variable de `apps/api` debe exponerse jamás al frontend.
 
@@ -141,10 +147,51 @@ gh pr create --base master --head dev
 
 El merge a `master` se hace manualmente desde GitHub.
 
+## Deploy a producción
+
+MVP1: se puede desplegar **sin comprar dominio propio**. `apps/web` y `apps/api` son dos proyectos de Vercel separados; sin un dominio raíz compartido, cada uno quedaría en un `*.vercel.app` distinto, y la cookie de sesión (`sameSite: "lax"`) no viajaría entre ellos en un `fetch()` sin importar qué tan permisiva sea la config de CORS. La solución: un *rewrite* en `apps/web` (`next.config.mjs`) reenvía `/api/*` del lado del servidor hacia el deployment real de `apps/api` — el navegador solo ve el dominio de `apps/web`, así que la cookie se guarda sin fricción. Cuando más adelante compres un dominio, es solo cambiar variables de entorno, no código.
+
+### 1. Base de datos (Supabase)
+
+1. Crea un proyecto en [supabase.com](https://supabase.com) (free tier).
+2. En **Project Settings → Database → Connection string** copia dos:
+   - **Connection pooling** (puerto `6543`, modo *Transaction*) → esta es tu `DATABASE_URL` de producción.
+   - **Direct connection** (puerto `5432`) → esta es tu `DIRECT_URL` de producción.
+3. En `packages/database/.env`, cambia **temporalmente** `DATABASE_URL` y `DIRECT_URL` a la conexión directa de Supabase (las dos apuntando a la directa — `migrate deploy` no usa el pooler) y corre, desde tu máquina:
+
+   ```bash
+   cd packages/database
+   pnpm db:deploy   # prisma migrate deploy — aplica las migraciones existentes, no crea nuevas
+   pnpm import:wger # importa el catálogo de ejercicios, una sola vez
+   cd ../..
+   ```
+
+4. Revierte `packages/database/.env` a tu Postgres local cuando termines — esta base de datos de producción no se vuelve a tocar desde tu máquina salvo que agregues una migración nueva.
+
+### 2. Dos proyectos en Vercel
+
+Vercel detecta el monorepo automáticamente — crea **dos proyectos** apuntando al mismo repo de GitHub, cada uno con un **Root Directory** distinto:
+
+| Proyecto | Root Directory | Variables de entorno |
+|---|---|---|
+| `fit-tracker-api` | `apps/api` | `DATABASE_URL` (pooled), `NEXTAUTH_SECRET`, `NEXTAUTH_URL` (la URL que Vercel le asigne a este mismo proyecto), `WEB_APP_URL` (URL del proyecto `fit-tracker-web`), `AUTH_COOKIE_DOMAIN` (vacía) |
+| `fit-tracker-web` | `apps/web` | `NEXT_PUBLIC_API_URL` (vacía), `API_ORIGIN` (URL del proyecto `fit-tracker-api`) |
+
+Despliega primero `fit-tracker-api` para tener su URL real, complétala como `API_ORIGIN`/`WEB_APP_URL` en ambos proyectos, y despliega `fit-tracker-web`. Las variables de wger/USDA/Edamam/Anthropic/Supabase Storage quedan vacías hasta que exista Nutrition Tracker.
+
+### 3. Verificación
+
+Entra a la URL de `fit-tracker-web`, regístrate, cierra sesión y vuelve a entrar — si la sesión persiste entre recargas, el rewrite y la cookie están funcionando. Revisa en el dashboard de Vercel (`fit-tracker-api` → Functions → Logs) que las llamadas a `/api/*` sí lleguen.
+
+### Cuando compres un dominio propio
+
+Cambia `AUTH_COOKIE_DOMAIN` a `.tudominio.com` en `apps/api`, `NEXTAUTH_URL` a `https://api.tudominio.com`, `WEB_APP_URL` a `https://app.tudominio.com`, y en `apps/web` `NEXT_PUBLIC_API_URL` a `https://api.tudominio.com` (puedes quitar `API_ORIGIN`, aunque dejarlo no hace daño). Asigna los subdominios a cada proyecto desde Vercel.
+
 ## Roadmap
 
 1. ~~Setup del monorepo y auth~~ ✅
 2. ~~Módulo **Progreso** (CRUD + formulario de datos iniciales)~~ ✅ — falta agregar las gráficas de evolución en el tiempo
-3. Módulo **Gym Tracker**: catálogo de ejercicios (import de wger), rutinas, heatmap de días entrenados
-4. Módulo **Nutrition Tracker**: parsing de PDFs de InBody/nutrióloga vía LLM, macros vía USDA/Edamam, recetas y tracking diario
-5. Deploy a Vercel (dominio propio pendiente de compra)
+3. ~~Módulo **Gym Tracker**: catálogo de ejercicios (import de wger), rutinas, progreso por ejercicio, histórico + heatmap~~ ✅
+4. **Deploy a producción como MVP1** (sin dominio propio) — ver [Deploy a producción](#deploy-a-producción)
+5. Módulo **Nutrition Tracker**: parsing de PDFs de InBody/nutrióloga vía LLM, macros vía USDA/Edamam, recetas y tracking diario
+6. Comprar dominio propio y migrar la config de cookies/URLs

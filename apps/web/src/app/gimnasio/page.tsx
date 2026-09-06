@@ -8,6 +8,7 @@ import { useRoutines } from "@/hooks/useRoutines";
 import { useWorkoutSessions } from "@/hooks/useWorkoutSessions";
 import { todayIsoLocal } from "@/lib/date";
 import { EmptyState } from "@/components/dashboard/EmptyState";
+import { GimnasioNav } from "@/components/gimnasio/GimnasioNav";
 import { RoutineListItem } from "@/components/gimnasio/RoutineListItem";
 
 export default function GimnasioPage() {
@@ -39,15 +40,7 @@ export default function GimnasioPage() {
           </Link>
         </div>
 
-        <div className="flex gap-2">
-          <span className="rounded-full bg-accent px-4 py-1.5 text-sm font-bold text-accent-ink">Rutinas</span>
-          <Link
-            href="/gimnasio/progreso"
-            className="rounded-full border border-border-2 px-4 py-1.5 text-sm font-semibold text-muted hover:text-ink"
-          >
-            Progreso
-          </Link>
-        </div>
+        <GimnasioNav />
 
         <div className="flex items-center justify-between">
           <div className="font-serif text-lg font-semibold text-ink">Tus rutinas</div>

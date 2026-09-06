@@ -12,6 +12,7 @@ import { bestWeightForEntry } from "@/lib/exercise-progress";
 import { EmptyState } from "@/components/dashboard/EmptyState";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { SelectField } from "@/components/shared/Select";
+import { GimnasioNav } from "@/components/gimnasio/GimnasioNav";
 import { ExerciseProgressChart } from "@/components/gimnasio/ExerciseProgressChart";
 import { ExerciseProgressHistory } from "@/components/gimnasio/ExerciseProgressHistory";
 
@@ -85,15 +86,7 @@ export default function ProgresoGimnasioPage() {
           </Link>
         </div>
 
-        <div className="flex gap-2">
-          <Link
-            href="/gimnasio"
-            className="rounded-full border border-border-2 px-4 py-1.5 text-sm font-semibold text-muted hover:text-ink"
-          >
-            Rutinas
-          </Link>
-          <span className="rounded-full bg-accent px-4 py-1.5 text-sm font-bold text-accent-ink">Progreso</span>
-        </div>
+        <GimnasioNav />
 
         {isListLoading ? (
           <div className="rounded-2xl border border-border bg-surface p-8 text-center text-sm text-muted">

@@ -11,17 +11,12 @@ import { useExerciseProgress } from "@/hooks/useExerciseProgress";
 import { bestWeightForEntry } from "@/lib/exercise-progress";
 import { EmptyState } from "@/components/dashboard/EmptyState";
 import { StatCard } from "@/components/dashboard/StatCard";
+import { SelectField } from "@/components/shared/Select";
 import { ExerciseProgressChart } from "@/components/gimnasio/ExerciseProgressChart";
 import { ExerciseProgressHistory } from "@/components/gimnasio/ExerciseProgressHistory";
 
 const ALL_ROUTINES = "all" as const;
 type RoutineFilter = typeof ALL_ROUTINES | string;
-
-function pillClass(isActive: boolean) {
-  return isActive
-    ? "rounded-full bg-accent px-3.5 py-1.5 text-sm font-bold text-accent-ink"
-    : "rounded-full border border-border-2 px-3.5 py-1.5 text-sm font-semibold text-muted hover:text-ink";
-}
 
 export default function ProgresoGimnasioPage() {
   const router = useRouter();
@@ -113,25 +108,25 @@ export default function ProgresoGimnasioPage() {
           </div>
         ) : (
           <div className="flex flex-col gap-5">
-            <div className="flex flex-col gap-2">
-              <span className="text-[13px] font-semibold text-label">Rutina</span>
-              <div className="flex flex-wrap gap-2">
-                {trainedExercises.length > 0 ? (
-                  <button type="button" onClick={() => setRoutineFilter(ALL_ROUTINES)} className={pillClass(routineFilter === ALL_ROUTINES)}>
-                    Todas
-                  </button>
-                ) : null}
-                {routines.map((routine) => (
-                  <button
-                    key={routine.id}
-                    type="button"
-                    onClick={() => setRoutineFilter(routine.id)}
-                    className={pillClass(routineFilter === routine.id)}
-                  >
-                    {routine.name}
-                  </button>
-                ))}
-              </div>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <SelectField
+                label="Rutina"
+                value={routineFilter ?? ""}
+                onChange={(event) => setRoutineFilter(event.target.value)}
+                options={[
+                  ...(trainedExercises.length > 0 ? [{ value: ALL_ROUTINES, label: "Todas" }] : []),
+                  ...routines.map((routine) => ({ value: routine.id, label: routine.name })),
+                ]}
+              />
+
+              {visibleExercises.length > 0 ? (
+                <SelectField
+                  label="Ejercicio"
+                  value={selectedId ?? ""}
+                  onChange={(event) => setSelectedId(event.target.value)}
+                  options={visibleExercises.map((exercise) => ({ value: exercise.id, label: exercise.name }))}
+                />
+              ) : null}
             </div>
 
             {visibleExercises.length === 0 ? (
@@ -143,19 +138,6 @@ export default function ProgresoGimnasioPage() {
               </div>
             ) : (
               <>
-                <div className="flex flex-wrap gap-2">
-                  {visibleExercises.map((exercise) => (
-                    <button
-                      key={exercise.id}
-                      type="button"
-                      onClick={() => setSelectedId(exercise.id)}
-                      className={pillClass(exercise.id === selectedId)}
-                    >
-                      {exercise.name}
-                    </button>
-                  ))}
-                </div>
-
                 {isProgressLoading ? (
                   <div className="rounded-2xl border border-border bg-surface p-8 text-center text-sm text-muted">
                     Cargando progreso…

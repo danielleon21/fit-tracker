@@ -8,8 +8,12 @@ export function handleRouteError(error: unknown): NextResponse {
   }
 
   if (error instanceof ZodError) {
+    // `.flatten()` pierde la ruta en campos anidados (ej. "exercises.2.targetWeightKg"
+    // dentro de un array) — se arma el mensaje desde `issues` directamente para que
+    // el frontend pueda mostrar algo específico en vez de un genérico "Invalid input".
+    const message = error.issues.map((issue) => `${issue.path.join(".")}: ${issue.message}`).join("; ");
     return NextResponse.json(
-      { error: "Invalid input", code: "VALIDATION_ERROR", issues: error.flatten() },
+      { error: message || "Invalid input", code: "VALIDATION_ERROR", issues: error.flatten() },
       { status: 400 },
     );
   }

@@ -13,7 +13,7 @@ export const progressService = {
 
   async updateEntry(id: string, userId: string, input: UpdateProgressEntryInput) {
     const entry = await progressRepository.update(id, userId, input);
-    if (!entry) throw new NotFoundError("Progress entry not found");
+    if (!entry) throw new NotFoundError("Registro de progreso no encontrado.");
     return entry;
   },
 };

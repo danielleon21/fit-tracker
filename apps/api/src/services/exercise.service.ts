@@ -8,7 +8,7 @@ export const exerciseService = {
 
   async getById(id: string) {
     const exercise = await exerciseRepository.findById(id);
-    if (!exercise) throw new NotFoundError("Exercise not found");
+    if (!exercise) throw new NotFoundError("Ejercicio no encontrado.");
     return exercise;
   },
 
@@ -27,7 +27,7 @@ export const exerciseService = {
 
     const foundCount = await exerciseRepository.countByIds(uniqueIds);
     if (foundCount !== uniqueIds.length) {
-      throw new ValidationError("One or more exercises don't exist in the catalog");
+      throw new ValidationError("Uno o más ejercicios no existen en el catálogo.");
     }
   },
 };

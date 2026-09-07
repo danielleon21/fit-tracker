@@ -7,7 +7,7 @@ import { NotFoundError, ValidationError } from "@/errors/domain-errors";
 async function assertRoutineOwnership(routineId: string | null | undefined, userId: string) {
   if (!routineId) return;
   const routine = await routineRepository.findById(routineId, userId);
-  if (!routine) throw new ValidationError("Routine not found");
+  if (!routine) throw new ValidationError("Rutina no encontrada.");
 }
 
 export const workoutSessionService = {
@@ -17,7 +17,7 @@ export const workoutSessionService = {
 
   async getById(id: string, userId: string) {
     const session = await workoutSessionRepository.findById(id, userId);
-    if (!session) throw new NotFoundError("Workout session not found");
+    if (!session) throw new NotFoundError("Sesión de entrenamiento no encontrada.");
     return session;
   },
 
@@ -31,12 +31,12 @@ export const workoutSessionService = {
     await assertRoutineOwnership(input.routineId, userId);
     await exerciseService.assertAllExist((input.sets ?? []).map((set) => set.exerciseId));
     const session = await workoutSessionRepository.update(id, userId, input);
-    if (!session) throw new NotFoundError("Workout session not found");
+    if (!session) throw new NotFoundError("Sesión de entrenamiento no encontrada.");
     return session;
   },
 
   async remove(id: string, userId: string) {
     const deleted = await workoutSessionRepository.delete(id, userId);
-    if (!deleted) throw new NotFoundError("Workout session not found");
+    if (!deleted) throw new NotFoundError("Sesión de entrenamiento no encontrada.");
   },
 };

@@ -5,7 +5,7 @@ import { handleRouteError } from "@/middleware/error-handler";
 
 const registerSchema = z.object({
   email: z.string().email(),
-  password: z.string().min(8, "Password must be at least 8 characters"),
+  password: z.string().min(8, "La contraseña debe tener al menos 8 caracteres."),
   name: z.string().min(1).optional(),
 });
 

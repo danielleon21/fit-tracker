@@ -14,7 +14,7 @@ Para el contexto completo de arquitectura y decisiones de diseño, ver [CLAUDE.m
 | **Dashboard** (`/`) | ✅ Muestra progreso y la rutina de hoy reales; calorías y macros siguen en *empty state* (esperando Nutrition Tracker) |
 | **Nutrition Tracker** (PDFs de InBody/nutrióloga, macros, tracking diario) | ⏳ No implementado |
 | **Peso ideal vía import de PDF de InBody** | ⏳ Pendiente — hoy se ingresa a mano en el formulario de Progreso |
-| **Deploy a producción** | ⏳ En preparación — ver [Deploy a producción](#deploy-a-producción) |
+| **Deploy a producción (MVP1, sin dominio propio)** | ✅ En vivo — ver [Deploy a producción](#deploy-a-producción) |
 
 ### Rutas y endpoints ya implementados
 
@@ -151,12 +151,19 @@ El merge a `master` se hace manualmente desde GitHub.
 
 MVP1: se puede desplegar **sin comprar dominio propio**. `apps/web` y `apps/api` son dos proyectos de Vercel separados; sin un dominio raíz compartido, cada uno quedaría en un `*.vercel.app` distinto, y la cookie de sesión (`sameSite: "lax"`) no viajaría entre ellos en un `fetch()` sin importar qué tan permisiva sea la config de CORS. La solución: un *rewrite* en `apps/web` (`next.config.mjs`) reenvía `/api/*` del lado del servidor hacia el deployment real de `apps/api` — el navegador solo ve el dominio de `apps/web`, así que la cookie se guarda sin fricción. Cuando más adelante compres un dominio, es solo cambiar variables de entorno, no código.
 
+**En vivo desde 2026-09-06:**
+- Frontend: https://fit-tracker-web-three.vercel.app
+- Backend: https://fit-tracker-api-two.vercel.app
+- Base de datos: Supabase (Postgres)
+
 ### 1. Base de datos (Supabase)
 
 1. Crea un proyecto en [supabase.com](https://supabase.com) (free tier).
-2. En **Project Settings → Database → Connection string** copia dos:
-   - **Connection pooling** (puerto `6543`, modo *Transaction*) → esta es tu `DATABASE_URL` de producción.
-   - **Direct connection** (puerto `5432`) → esta es tu `DIRECT_URL` de producción.
+2. En el diálogo de conexión de Supabase, usa la pestaña **"ORM"** (pensada para Prisma) en vez de "Direct" — te da directamente el par correcto:
+   - **Transaction pooler** (puerto `6543`, con `?pgbouncer=true`) → esta es tu `DATABASE_URL` de producción.
+   - **Session pooler** (puerto `5432`, host `*.pooler.supabase.com`) → esta es tu `DIRECT_URL` de producción.
+
+   ⚠️ No uses la conexión **"Direct"** cruda (`db.<proyecto>.supabase.co:5432`) para nada — es solo IPv6 en proyectos nuevos de Supabase, y la mayoría de las redes domésticas no tienen salida IPv6, así que falla con "Can't reach database server" sin ninguna pista de por qué. Los poolers (`*.pooler.supabase.com`) sí son IPv4.
 3. En `packages/database/.env`, cambia **temporalmente** `DATABASE_URL` y `DIRECT_URL` a la conexión directa de Supabase (las dos apuntando a la directa — `migrate deploy` no usa el pooler) y corre, desde tu máquina:
 
    ```bash
@@ -187,11 +194,18 @@ Entra a la URL de `fit-tracker-web`, regístrate, cierra sesión y vuelve a entr
 
 Cambia `AUTH_COOKIE_DOMAIN` a `.tudominio.com` en `apps/api`, `NEXTAUTH_URL` a `https://api.tudominio.com`, `WEB_APP_URL` a `https://app.tudominio.com`, y en `apps/web` `NEXT_PUBLIC_API_URL` a `https://api.tudominio.com` (puedes quitar `API_ORIGIN`, aunque dejarlo no hace daño). Asigna los subdominios a cada proyecto desde Vercel.
 
+### Troubleshooting — bugs reales que ya se resolvieron
+
+Si vuelves a tocar la configuración de deploy y algo se rompe de forma parecida, ya se vio esto antes:
+
+- **`PrismaClientInitializationError: could not locate the Query Engine for runtime "rhel-openssl-3.0.x"`**: ya está resuelto (`binaryTargets` en `schema.prisma` + `experimental.outputFileTracingIncludes` en `apps/api/next.config.mjs`, necesarios ambos — el primero para que el binario se genere, el segundo para que el *file tracer* de Next.js lo detecte dentro de la estructura de `pnpm` en el monorepo y lo incluya en el bundle de la función serverless). Si vuelve a aparecer tras cambiar algo de Prisma, revisa que esos dos sigan intactos.
+- **Editar una variable de entorno en Vercel y redesplegar no cambia nada** (mismo comportamiento de antes, build tras build): Turborepo puede estar sirviendo una build vieja en caché porque `turbo.json` no sabe que esa variable afecta el resultado. Cualquier variable que un `next.config.mjs`/build lea y que cambie su salida debe estar en el array `env` de la tarea correspondiente en `turbo.json` (ver `"build": { "env": [...] }`) — si no, la caché no se invalida aunque cambies el valor en Vercel mil veces.
+
 ## Roadmap
 
 1. ~~Setup del monorepo y auth~~ ✅
 2. ~~Módulo **Progreso** (CRUD + formulario de datos iniciales)~~ ✅ — falta agregar las gráficas de evolución en el tiempo
 3. ~~Módulo **Gym Tracker**: catálogo de ejercicios (import de wger), rutinas, progreso por ejercicio, histórico + heatmap~~ ✅
-4. **Deploy a producción como MVP1** (sin dominio propio) — ver [Deploy a producción](#deploy-a-producción)
+4. ~~**Deploy a producción como MVP1** (sin dominio propio)~~ ✅ — en vivo, ver [Deploy a producción](#deploy-a-producción)
 5. Módulo **Nutrition Tracker**: parsing de PDFs de InBody/nutrióloga vía LLM, macros vía USDA/Edamam, recetas y tracking diario
 6. Comprar dominio propio y migrar la config de cookies/URLs

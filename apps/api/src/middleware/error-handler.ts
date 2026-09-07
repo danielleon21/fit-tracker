@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 import { DomainError } from "@/errors/domain-errors";
+// Efecto secundario: registra el mapa de errores de Zod en español. Toda
+// ruta ya importa `handleRouteError` de este archivo, así que basta con
+// importarlo aquí para que quede activo antes de que corra cualquier
+// `schema.parse()`.
+import "@/lib/zod-error-map";
 
 export function handleRouteError(error: unknown): NextResponse {
   if (error instanceof DomainError) {
@@ -13,14 +18,14 @@ export function handleRouteError(error: unknown): NextResponse {
     // el frontend pueda mostrar algo específico en vez de un genérico "Invalid input".
     const message = error.issues.map((issue) => `${issue.path.join(".")}: ${issue.message}`).join("; ");
     return NextResponse.json(
-      { error: message || "Invalid input", code: "VALIDATION_ERROR", issues: error.flatten() },
+      { error: message || "Datos inválidos.", code: "VALIDATION_ERROR", issues: error.flatten() },
       { status: 400 },
     );
   }
 
   console.error(error);
   return NextResponse.json(
-    { error: "Internal server error", code: "INTERNAL_ERROR" },
+    { error: "Error interno del servidor.", code: "INTERNAL_ERROR" },
     { status: 500 },
   );
 }

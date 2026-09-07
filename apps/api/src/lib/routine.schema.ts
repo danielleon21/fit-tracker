@@ -12,7 +12,7 @@ const routineExerciseSchema = z.object({
 const routineFieldsSchema = z.object({
   name: z.string().min(1).max(100),
   daysOfWeek: z.array(z.number().int().min(0).max(6)).max(7),
-  exercises: z.array(routineExerciseSchema).min(1, "A routine needs at least one exercise"),
+  exercises: z.array(routineExerciseSchema).min(1, "La rutina necesita al menos un ejercicio."),
 });
 
 export const createRoutineSchema = routineFieldsSchema;

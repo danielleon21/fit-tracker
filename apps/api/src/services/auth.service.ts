@@ -9,7 +9,7 @@ export const authService = {
   async register(input: RegisterInput): Promise<AuthUser> {
     const existing = await userRepository.findByEmail(input.email);
     if (existing) {
-      throw new ConflictError("A user with this email already exists");
+      throw new ConflictError("Ya existe una cuenta con ese email.");
     }
 
     const passwordHash = await bcrypt.hash(input.password, SALT_ROUNDS);
@@ -25,12 +25,12 @@ export const authService = {
   async validateCredentials(email: string, password: string): Promise<AuthUser> {
     const user = await userRepository.findByEmail(email);
     if (!user?.passwordHash) {
-      throw new UnauthorizedError("Invalid email or password");
+      throw new UnauthorizedError("Email o contraseña incorrectos.");
     }
 
     const isValid = await bcrypt.compare(password, user.passwordHash);
     if (!isValid) {
-      throw new UnauthorizedError("Invalid email or password");
+      throw new UnauthorizedError("Email o contraseña incorrectos.");
     }
 
     return { id: user.id, email: user.email, name: user.name };

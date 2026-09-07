@@ -10,25 +10,25 @@ export class DomainError extends Error {
 }
 
 export class NotFoundError extends DomainError {
-  constructor(message = "Resource not found") {
+  constructor(message = "Recurso no encontrado.") {
     super(message, "NOT_FOUND", 404);
   }
 }
 
 export class ValidationError extends DomainError {
-  constructor(message = "Invalid input") {
+  constructor(message = "Datos inválidos.") {
     super(message, "VALIDATION_ERROR", 400);
   }
 }
 
 export class UnauthorizedError extends DomainError {
-  constructor(message = "Unauthorized") {
+  constructor(message = "No autorizado.") {
     super(message, "UNAUTHORIZED", 401);
   }
 }
 
 export class ConflictError extends DomainError {
-  constructor(message = "Resource already exists") {
+  constructor(message = "El recurso ya existe.") {
     super(message, "CONFLICT", 409);
   }
 }

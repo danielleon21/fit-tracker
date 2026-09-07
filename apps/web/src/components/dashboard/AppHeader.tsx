@@ -64,6 +64,14 @@ export function AppHeader({ userInitial, userLabel, onOpenProfile, onLogout }: A
               >
                 Gimnasio
               </Link>
+              <Link
+                href="/habitos"
+                role="menuitem"
+                onClick={() => setIsMenuOpen(false)}
+                className="block w-full rounded-lg px-2.5 py-2 text-left text-sm font-semibold text-ink hover:bg-surface-2"
+              >
+                Hábitos
+              </Link>
               <button
                 type="button"
                 role="menuitem"

@@ -4,7 +4,12 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "outputs": [".next/**", "!.next/cache/**", "dist/**"]
+      "outputs": [".next/**", "!.next/cache/**", "dist/**"],
+      // Sin esto, Turborepo no sabe que el resultado del build depende de
+      // estas variables — un cambio en Vercel (ej. agregar/editar API_ORIGIN)
+      // no invalida la caché, y sigue sirviendo un build viejo indefinidamente
+      // aunque la variable en Vercel ya esté correcta.
+      "env": ["API_ORIGIN", "NEXT_PUBLIC_API_URL"]
     },
     "@fit-tracker/database#build": {
       "cache": false

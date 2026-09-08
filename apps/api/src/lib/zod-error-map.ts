@@ -60,6 +60,11 @@ export const spanishErrorMap: z.ZodErrorMap = (issue, ctx) => {
       return { message: ctx.defaultError };
     }
 
+    case ZodIssueCode.invalid_enum_value: {
+      const options = issue.options.map((option) => `'${option}'`).join(", ");
+      return { message: `Valor inválido. Debe ser uno de: ${options}.` };
+    }
+
     case ZodIssueCode.invalid_string: {
       const { validation } = issue;
       if (validation === "email") return { message: "Debe ser un email válido." };

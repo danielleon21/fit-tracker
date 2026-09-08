@@ -37,6 +37,7 @@ model User {
   routines        Routine[]
   workoutSessions WorkoutSession[]
   habits          Habit[]
+  mealEntries     MealEntry[]
 
   @@map("users")
 }
@@ -263,5 +264,38 @@ model HabitLog {
 
   @@unique([habitId, date])
   @@map("habit_logs")
+}
+
+// --- Nutricion: registro diario de comidas ---
+// Cada MealEntry es un alimento con una cantidad en gramos, ligado a un tipo
+// de comida del dia. Los macros se calculan (per100g * cantidad/100) en el
+// service al momento de agregarlo y se guardan ya escalados: es un registro
+// historico de lo que se comio, no se recalcula si USDA actualiza sus datos
+// despues. fdcId es solo referencia opcional al alimento de origen en USDA.
+
+enum MealType {
+  DESAYUNO
+  COMIDA
+  CENA
+  SNACK
+}
+
+model MealEntry {
+  id           String   @id @default(cuid())
+  userId       String   @map("user_id")
+  date         DateTime @db.Date
+  mealType     MealType @map("meal_type")
+  description  String
+  quantityG    Decimal  @map("quantity_g") @db.Decimal(7, 2)
+  caloriesKcal Decimal? @map("calories_kcal") @db.Decimal(7, 2)
+  proteinG     Decimal? @map("protein_g") @db.Decimal(7, 2)
+  fatG         Decimal? @map("fat_g") @db.Decimal(7, 2)
+  carbsG       Decimal? @map("carbs_g") @db.Decimal(7, 2)
+  fdcId        Int?     @map("fdc_id")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("meal_entries")
 }
 

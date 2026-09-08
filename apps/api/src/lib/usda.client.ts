@@ -11,6 +11,10 @@ export interface UsdaFood {
   description: string;
   dataType: string;
   foodNutrients: UsdaFoodNutrient[];
+  // Solo presente cuando dataType === "Branded" — el nombre de marca del
+  // producto, útil para dejar claro que ese resultado no es un alimento
+  // genérico sino un producto comercial específico.
+  brandOwner?: string;
 }
 
 interface UsdaSearchResponse {

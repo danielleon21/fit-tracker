@@ -4,6 +4,8 @@ export interface FoodSearchResult {
   fdcId: number;
   description: string;
   dataType: string;
+  // Solo presente cuando dataType === "Branded".
+  brandOwner: string | null;
   caloriesKcal: number | null;
   proteinG: number | null;
   fatG: number | null;

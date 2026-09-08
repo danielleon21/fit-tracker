@@ -10,6 +10,8 @@ function toDto(entry: PrismaMealEntry) {
     mealType: entry.mealType,
     description: entry.description,
     quantityG: entry.quantityG.toNumber(),
+    unitCount: entry.unitCount?.toNumber() ?? null,
+    unitLabel: entry.unitLabel,
     caloriesKcal: entry.caloriesKcal?.toNumber() ?? null,
     proteinG: entry.proteinG?.toNumber() ?? null,
     fatG: entry.fatG?.toNumber() ?? null,
@@ -34,6 +36,8 @@ export const mealEntryRepository = {
       mealType: PrismaMealEntry["mealType"];
       description: string;
       quantityG: number;
+      unitCount: number | null;
+      unitLabel: string | null;
       caloriesKcal: number | null;
       proteinG: number | null;
       fatG: number | null;

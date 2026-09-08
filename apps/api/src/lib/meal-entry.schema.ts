@@ -7,6 +7,8 @@ export const createMealEntrySchema = z.object({
   mealType: mealTypeSchema,
   description: z.string().min(1).max(200),
   quantityG: z.number().positive().max(5000),
+  unitCount: z.number().positive().max(1000).nullable().optional(),
+  unitLabel: z.string().max(30).nullable().optional(),
   fdcId: z.number().int().positive().nullable().optional(),
   caloriesPer100g: z.number().nonnegative().nullable().optional(),
   proteinPer100g: z.number().nonnegative().nullable().optional(),

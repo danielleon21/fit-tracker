@@ -19,6 +19,8 @@ export const mealEntryService = {
       mealType: input.mealType,
       description: input.description,
       quantityG: input.quantityG,
+      unitCount: input.unitCount ?? null,
+      unitLabel: input.unitLabel ?? null,
       fdcId: input.fdcId ?? null,
       caloriesKcal: scale(input.caloriesPer100g, input.quantityG),
       proteinG: scale(input.proteinPer100g, input.quantityG),

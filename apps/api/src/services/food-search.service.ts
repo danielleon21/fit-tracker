@@ -27,6 +27,22 @@ function pickNutrient(nutrients: UsdaFoodNutrient[], names: string[]): number | 
   return null;
 }
 
+// servingSizeUnit no siempre es una unidad de masa (ej. "MLT" = mililitros
+// para líquidos) — solo tiene sentido como "peso de una pieza" cuando sí lo
+// es. Factor para convertir esa unidad a gramos.
+const MASS_UNIT_TO_GRAMS: Record<string, number> = {
+  g: 1,
+  GRM: 1,
+  MG: 0.001,
+  KG: 1000,
+};
+
+function pieceWeightInGrams(food: { servingSize?: number; servingSizeUnit?: string }): number | null {
+  if (food.servingSize === undefined || !food.servingSizeUnit) return null;
+  const factor = MASS_UNIT_TO_GRAMS[food.servingSizeUnit];
+  return factor === undefined ? null : Math.round(food.servingSize * factor * 100) / 100;
+}
+
 export const foodSearchService = {
   async search(query: string): Promise<FoodSearchResult[]> {
     const { foods } = await usdaClient.searchFoods(query);
@@ -36,6 +52,8 @@ export const foodSearchService = {
         description: food.description,
         dataType: food.dataType,
         brandOwner: food.brandOwner ?? null,
+        pieceWeightG: pieceWeightInGrams(food),
+        pieceWeightLabel: food.householdServingFullText ?? null,
         caloriesKcal: pickNutrient(food.foodNutrients, ENERGY_NUTRIENT_NAMES),
         proteinG: pickNutrient(food.foodNutrients, ["Protein"]),
         fatG: pickNutrient(food.foodNutrients, ["Total lipid (fat)"]),

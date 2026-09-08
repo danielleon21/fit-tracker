@@ -6,6 +6,12 @@ export interface FoodSearchResult {
   dataType: string;
   // Solo presente cuando dataType === "Branded".
   brandOwner: string | null;
+  // Peso en gramos de "una pieza" según USDA (ej. "1 EGG" = 31g) — solo viene
+  // poblado cuando el alimento trae un serving size en una unidad de masa.
+  // Casi nunca está presente en alimentos genéricos (Foundation/SR Legacy),
+  // típicamente solo en productos de marca (Branded).
+  pieceWeightG: number | null;
+  pieceWeightLabel: string | null;
   caloriesKcal: number | null;
   proteinG: number | null;
   fatG: number | null;

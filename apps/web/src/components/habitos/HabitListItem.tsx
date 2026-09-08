@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import type { Habit } from "@fit-tracker/types";
-import { isDoneOn, last7Days } from "@/lib/habit-progress";
+import { currentStreak, isDoneOn, last7Days } from "@/lib/habit-progress";
 import { todayIsoLocal } from "@/lib/date";
 
 function weekdayInitial(iso: string) {
@@ -26,6 +26,7 @@ export function HabitListItem({ habit, onToggleToday, onEdit, onDelete }: HabitL
   const today = todayIsoLocal();
   const doneToday = isDoneOn(habit, today);
   const days = last7Days();
+  const streak = currentStreak(habit);
 
   function handleDelete() {
     if (window.confirm(`¿Borrar el hábito "${habit.name}"?`)) {
@@ -48,6 +49,11 @@ export function HabitListItem({ habit, onToggleToday, onEdit, onDelete }: HabitL
         <div className="flex flex-col gap-1">
           <div className="font-serif text-lg font-semibold text-ink">{habit.name}</div>
           {habit.description ? <div className="text-xs text-muted">{habit.description}</div> : null}
+          {streak > 0 ? (
+            <div className="text-xs font-semibold text-accent">
+              🔥 Racha de {streak} día{streak === 1 ? "" : "s"}
+            </div>
+          ) : null}
         </div>
         <div className="flex flex-none items-center gap-2">
           <button

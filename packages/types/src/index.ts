@@ -3,3 +3,4 @@ export * from "./progress";
 export * from "./exercise";
 export * from "./routine";
 export * from "./workout";
+export * from "./habit";

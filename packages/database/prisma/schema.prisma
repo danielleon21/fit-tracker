@@ -36,6 +36,7 @@ model User {
   progressEntries ProgressEntry[]
   routines        Routine[]
   workoutSessions WorkoutSession[]
+  habits          Habit[]
 
   @@map("users")
 }
@@ -232,5 +233,35 @@ model WorkoutSetLog {
   exercise Exercise       @relation(fields: [exerciseId], references: [id])
 
   @@map("workout_set_logs")
+}
+
+// --- Seguidor de hábitos ---
+// MVP chico e independiente del Gym Tracker. Igual que WorkoutSession, "hecho
+// ese día" nunca es un booleano guardado — se deriva de que exista (o no) un
+// HabitLog para esa fecha.
+model Habit {
+  id          String   @id @default(cuid())
+  userId      String   @map("user_id")
+  name        String
+  description String?  @db.Text
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  user User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  logs HabitLog[]
+
+  @@map("habits")
+}
+
+model HabitLog {
+  id        String   @id @default(cuid())
+  habitId   String   @map("habit_id")
+  date      DateTime @db.Date
+  createdAt DateTime @default(now()) @map("created_at")
+
+  habit Habit @relation(fields: [habitId], references: [id], onDelete: Cascade)
+
+  @@unique([habitId, date])
+  @@map("habit_logs")
 }
 

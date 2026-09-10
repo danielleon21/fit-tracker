@@ -3,17 +3,18 @@
 import { useState } from "react";
 import type { CreateMealEntryInput, FoodSearchResult, MealType } from "@fit-tracker/types";
 import { MEAL_TYPES, foodSourceLabel, isGenericFood, scaleMacro } from "@/lib/nutrition";
-import { todayIsoLocal } from "@/lib/date";
 
 type UnitMode = "GRAMOS" | "PIEZAS";
 
 interface AddMealEntryPanelProps {
   food: FoodSearchResult;
+  /** Día al que se agrega el registro, YYYY-MM-DD. */
+  date: string;
   onConfirm: (input: CreateMealEntryInput) => Promise<void>;
   onCancel: () => void;
 }
 
-export function AddMealEntryPanel({ food, onConfirm, onCancel }: AddMealEntryPanelProps) {
+export function AddMealEntryPanel({ food, date, onConfirm, onCancel }: AddMealEntryPanelProps) {
   const [unitMode, setUnitMode] = useState<UnitMode>("GRAMOS");
   const [quantityG, setQuantityG] = useState("100");
   const [pieceCount, setPieceCount] = useState("1");
@@ -43,7 +44,7 @@ export function AddMealEntryPanel({ food, onConfirm, onCancel }: AddMealEntryPan
     setIsSubmitting(true);
     try {
       await onConfirm({
-        date: todayIsoLocal(),
+        date,
         mealType,
         description: food.description,
         quantityG: totalGrams,

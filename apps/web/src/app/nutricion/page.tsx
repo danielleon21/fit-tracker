@@ -1,23 +1,51 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useEffect, useState, type FormEvent } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import type { CreateMealEntryInput, FoodSearchResult } from "@fit-tracker/types";
 import { useAuth } from "@/hooks/useAuth";
 import { useFoodSearch } from "@/hooks/useFoodSearch";
 import { useMealEntries } from "@/hooks/useMealEntries";
+import { formatLongDate, isIsoDate, todayIsoLocal } from "@/lib/date";
 import { EmptyState } from "@/components/dashboard/EmptyState";
+import { DateNavigator } from "@/components/shared/DateNavigator";
 import { FormField } from "@/components/shared/FormField";
 import { FoodResultCard } from "@/components/nutricion/FoodResultCard";
 import { AddMealEntryPanel } from "@/components/nutricion/AddMealEntryPanel";
 import { MealEntriesSection } from "@/components/nutricion/MealEntriesSection";
 
+function LoadingScreen() {
+  return <div className="flex min-h-screen items-center justify-center bg-bg text-sm text-muted">Cargando…</div>;
+}
+
+/**
+ * Día seleccionado a partir de `?fecha=YYYY-MM-DD`. Sin parámetro, o si viene
+ * inválido o en el futuro, se usa hoy.
+ */
+function useSelectedDate(): string {
+  const fecha = useSearchParams().get("fecha");
+  const today = todayIsoLocal();
+  return fecha && isIsoDate(fecha) && fecha <= today ? fecha : today;
+}
+
+// useSearchParams() necesita un <Suspense> arriba para que Next pueda
+// prerenderizar la página (si no, falla el build).
 export default function NutricionPage() {
+  return (
+    <Suspense fallback={<LoadingScreen />}>
+      <NutricionContent />
+    </Suspense>
+  );
+}
+
+function NutricionContent() {
   const router = useRouter();
+  const date = useSelectedDate();
+  const isToday = date === todayIsoLocal();
   const { user, isLoading: isAuthLoading } = useAuth();
   const { results, isLoading, error, hasSearched, search } = useFoodSearch();
-  const { entries, addEntry, removeEntry } = useMealEntries();
+  const { entries, isLoading: isEntriesLoading, addEntry, removeEntry } = useMealEntries(date);
   const [query, setQuery] = useState("");
   const [selectedFood, setSelectedFood] = useState<FoodSearchResult | null>(null);
 
@@ -28,7 +56,12 @@ export default function NutricionPage() {
   }, [isAuthLoading, user, router]);
 
   if (isAuthLoading || !user) {
-    return <div className="flex min-h-screen items-center justify-center bg-bg text-sm text-muted">Cargando…</div>;
+    return <LoadingScreen />;
+  }
+
+  function handleDateChange(nextDate: string) {
+    // replace y no push: navegar día por día no debería llenar el historial.
+    router.replace(nextDate === todayIsoLocal() ? "/nutricion" : `/nutricion?fecha=${nextDate}`, { scroll: false });
   }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -54,19 +87,30 @@ export default function NutricionPage() {
           </Link>
         </div>
 
-        {entries.length > 0 ? (
+        <DateNavigator date={date} onChange={handleDateChange} />
+
+        {isEntriesLoading ? (
+          <div className="rounded-2xl border border-border bg-surface p-8 text-center text-sm text-muted">
+            Cargando…
+          </div>
+        ) : entries.length > 0 ? (
           <MealEntriesSection entries={entries} onRemove={removeEntry} />
         ) : (
           <div className="rounded-2xl border border-border bg-surface p-4">
             <EmptyState
-              title="Aún no registras nada hoy"
+              title={isToday ? "Aún no registras nada hoy" : "No hay registros este día"}
               description="Busca un alimento abajo, elige la cantidad y agrégalo a una comida."
             />
           </div>
         )}
 
         <div className="flex flex-col gap-4">
-          <div className="font-serif text-lg font-semibold text-ink">Agregar alimento</div>
+          <div className="flex flex-col gap-0.5">
+            <div className="font-serif text-lg font-semibold text-ink">Agregar alimento</div>
+            {!isToday ? (
+              <div className="text-xs text-muted">Se registrará el {formatLongDate(date)}.</div>
+            ) : null}
+          </div>
 
           <form onSubmit={handleSubmit} className="flex items-end gap-3">
             <div className="flex-1">
@@ -112,6 +156,7 @@ export default function NutricionPage() {
                   <AddMealEntryPanel
                     key={food.fdcId}
                     food={food}
+                    date={date}
                     onConfirm={handleAddEntry}
                     onCancel={() => setSelectedFood(null)}
                   />

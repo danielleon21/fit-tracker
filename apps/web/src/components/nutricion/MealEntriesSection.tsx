@@ -17,7 +17,7 @@ export function MealEntriesSection({ entries, onRemove }: MealEntriesSectionProp
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between rounded-2xl border border-border bg-surface-2 px-5 py-4">
-        <div className="font-serif text-sm font-semibold text-ink">Total de hoy</div>
+        <div className="font-serif text-sm font-semibold text-ink">Total del día</div>
         <div className="flex gap-4 text-sm">
           <span className="font-bold text-ink">{round(totals.caloriesKcal)} kcal</span>
           <span className="text-muted">{round(totals.proteinG)}g prot</span>

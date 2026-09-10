@@ -24,6 +24,14 @@ const config: Config = {
         danger: "oklch(0.7 0.15 25)",
         "danger-bg": "oklch(0.7 0.15 25 / 16%)",
         "muted-bg": "oklch(0.65 0.02 288 / 18%)",
+        // Trío categórico para las gráficas de macros. No reutiliza accent/
+        // success/danger a propósito: esos son colores de estado, y pintar la
+        // grasa de "danger" la haría leer como un error. Validado como set
+        // contra el fondo oscuro: separación suficiente bajo daltonismo
+        // protan/deutan y contraste ≥ 3:1 sobre surface-2.
+        "macro-protein": "oklch(0.65 0.16 255)",
+        "macro-carbs": "oklch(0.66 0.14 75)",
+        "macro-fat": "oklch(0.65 0.15 165)",
         "blob-violet": "oklch(0.5 0.09 288 / 45%)",
         "blob-blue": "oklch(0.55 0.11 255 / 40%)",
       },

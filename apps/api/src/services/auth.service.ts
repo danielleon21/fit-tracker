@@ -3,7 +3,7 @@ import type { AuthUser, RegisterInput } from "@fit-tracker/types";
 import { userRepository } from "@/repositories/user.repository";
 import { ConflictError, UnauthorizedError } from "@/errors/domain-errors";
 
-const SALT_ROUNDS = 10;
+const SALT_ROUNDS = 12;
 
 export const authService = {
   async register(input: RegisterInput): Promise<AuthUser> {

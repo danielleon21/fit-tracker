@@ -1,5 +1,5 @@
 import type { MealEntry } from "@fit-tracker/types";
-import { MEAL_TYPES, groupByMealType, sumMacros } from "@/lib/nutrition";
+import { MEAL_TYPES, formatQuantity, groupByMealType, sumMacros } from "@/lib/nutrition";
 
 function round(value: number) {
   return Math.round(value * 10) / 10;
@@ -44,7 +44,7 @@ export function MealEntriesSection({ entries, onRemove }: MealEntriesSectionProp
                       {entry.description.toLowerCase()}
                     </span>
                     <span className="text-xs text-muted">
-                      {entry.quantityG}g · {entry.caloriesKcal ?? "—"} kcal · {entry.proteinG ?? "—"}g prot ·{" "}
+                      {formatQuantity(entry)} · {entry.caloriesKcal ?? "—"} kcal · {entry.proteinG ?? "—"}g prot ·{" "}
                       {entry.carbsG ?? "—"}g carbs · {entry.fatG ?? "—"}g grasa
                     </span>
                   </div>

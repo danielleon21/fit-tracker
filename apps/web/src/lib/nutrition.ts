@@ -32,6 +32,13 @@ export function sumMacros(entries: MealEntry[]): MacroTotals {
   );
 }
 
+/** "2 piezas (100g)" si se agregó por piezas, o "100g" si fue directo en gramos. */
+export function formatQuantity(entry: Pick<MealEntry, "quantityG" | "unitCount" | "unitLabel">): string {
+  if (entry.unitCount === null || !entry.unitLabel) return `${entry.quantityG}g`;
+  const plural = entry.unitCount === 1 ? entry.unitLabel : `${entry.unitLabel}s`;
+  return `${entry.unitCount} ${plural} (${entry.quantityG}g)`;
+}
+
 export function groupByMealType(entries: MealEntry[]): Record<MealType, MealEntry[]> {
   const grouped = { DESAYUNO: [], COMIDA: [], CENA: [], SNACK: [] } as Record<MealType, MealEntry[]>;
   for (const entry of entries) grouped[entry.mealType].push(entry);

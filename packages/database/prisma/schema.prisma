@@ -272,6 +272,14 @@ model HabitLog {
 // service al momento de agregarlo y se guardan ya escalados: es un registro
 // historico de lo que se comio, no se recalcula si USDA actualiza sus datos
 // despues. fdcId es solo referencia opcional al alimento de origen en USDA.
+//
+// quantityG siempre es la fuente de verdad para el calculo (gramos totales).
+// unitCount/unitLabel son solo para mostrar como se capturo cuando se agrego
+// por piezas en vez de gramos directos (ej. "2 piezas" en vez de "100g") -- el
+// front ya convierte piezas -> gramos antes de mandar el request, USDA casi
+// nunca trae el peso de "una pieza" para alimentos genericos asi que ese
+// peso lo escribe el usuario (o se autorellena si el alimento elegido si trae
+// ese dato, tipicamente productos de marca).
 
 enum MealType {
   DESAYUNO
@@ -287,6 +295,8 @@ model MealEntry {
   mealType     MealType @map("meal_type")
   description  String
   quantityG    Decimal  @map("quantity_g") @db.Decimal(7, 2)
+  unitCount    Decimal? @map("unit_count") @db.Decimal(6, 2)
+  unitLabel    String?  @map("unit_label")
   caloriesKcal Decimal? @map("calories_kcal") @db.Decimal(7, 2)
   proteinG     Decimal? @map("protein_g") @db.Decimal(7, 2)
   fatG         Decimal? @map("fat_g") @db.Decimal(7, 2)

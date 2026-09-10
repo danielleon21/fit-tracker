@@ -15,6 +15,13 @@ export interface UsdaFood {
   // producto, útil para dejar claro que ese resultado no es un alimento
   // genérico sino un producto comercial específico.
   brandOwner?: string;
+  // Peso de "una porción/pieza" tal como lo reporta USDA — casi siempre
+  // ausente en alimentos genéricos (Foundation/SR Legacy), presente sobre
+  // todo en productos de marca. servingSizeUnit no siempre es masa (puede
+  // ser "MLT" para volumen) — hay que filtrar eso al usarlo.
+  servingSize?: number;
+  servingSizeUnit?: string;
+  householdServingFullText?: string;
 }
 
 interface UsdaSearchResponse {

@@ -65,3 +65,34 @@ export function foodSourceLabel(food: Pick<FoodSearchResult, "dataType" | "brand
   if (food.dataType === "Branded" && food.brandOwner) return food.brandOwner;
   return DATA_TYPE_LABELS[food.dataType] ?? food.dataType;
 }
+
+/**
+ * Kcal por gramo de cada macro (factores de Atwater). El reparto de energía se
+ * calcula desde los gramos y no desde `caloriesKcal` porque ese total también
+ * incluye fibra y alcohol: los tres macros nunca sumarían exactamente 100%.
+ */
+const KCAL_PER_GRAM = { protein: 4, carbs: 4, fat: 9 } as const;
+
+export interface MacroSplit {
+  proteinPct: number;
+  carbsPct: number;
+  fatPct: number;
+}
+
+/**
+ * Porcentaje de las calorías del día que aporta cada macro. `null` cuando aún
+ * no hay macros con los que repartir (día vacío, o alimentos sin datos de USDA).
+ */
+export function macroSplit(totals: MacroTotals): MacroSplit | null {
+  const proteinKcal = totals.proteinG * KCAL_PER_GRAM.protein;
+  const carbsKcal = totals.carbsG * KCAL_PER_GRAM.carbs;
+  const fatKcal = totals.fatG * KCAL_PER_GRAM.fat;
+  const totalKcal = proteinKcal + carbsKcal + fatKcal;
+  if (totalKcal <= 0) return null;
+
+  return {
+    proteinPct: (proteinKcal / totalKcal) * 100,
+    carbsPct: (carbsKcal / totalKcal) * 100,
+    fatPct: (fatKcal / totalKcal) * 100,
+  };
+}

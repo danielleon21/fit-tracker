@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { useProgress } from "@/hooks/useProgress";
 import { useTodayRoutine } from "@/hooks/useTodayRoutine";
+import { useMealEntries } from "@/hooks/useMealEntries";
 import { todayIsoLocal } from "@/lib/date";
 import { AppHeader } from "@/components/dashboard/AppHeader";
 import { StatCard } from "@/components/dashboard/StatCard";
@@ -33,6 +34,7 @@ export default function DashboardPage() {
     updateSession,
     undo,
   } = useTodayRoutine();
+  const { entries: mealEntries, isLoading: isMealsLoading } = useMealEntries();
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
   useEffect(() => {
@@ -141,8 +143,8 @@ export default function DashboardPage() {
         )}
 
         <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-          <CaloriesCard />
-          <MacrosCard />
+          <CaloriesCard entries={mealEntries} isLoading={isMealsLoading} />
+          <MacrosCard entries={mealEntries} isLoading={isMealsLoading} />
         </div>
 
         {isRoutineLoading ? (

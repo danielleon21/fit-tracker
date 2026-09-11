@@ -1,10 +1,56 @@
 "use client";
 
-import { useState } from "react";
-import type { CreateMealEntryInput, FoodSearchResult, MealType } from "@fit-tracker/types";
+import { useMemo, useState } from "react";
+import type { CreateMealEntryInput, FoodPortion, FoodSearchResult, MealType } from "@fit-tracker/types";
 import { MEAL_TYPES, foodSourceLabel, isGenericFood, scaleMacro } from "@/lib/nutrition";
 
 type UnitMode = "GRAMOS" | "PIEZAS";
+
+// Porción elegida: el índice en `portionOptions`, o CUSTOM para escribir el
+// peso de una pieza a mano.
+const CUSTOM = "CUSTOM";
+type PortionChoice = number | typeof CUSTOM;
+
+interface PortionOption extends FoodPortion {
+  isLastUsed: boolean;
+}
+
+const PILL = "rounded-full border border-border-2 px-3.5 py-1.5 text-sm font-semibold text-muted hover:text-ink";
+const PILL_SELECTED = "rounded-full bg-accent px-3.5 py-1.5 text-sm font-bold text-accent-ink";
+const INPUT =
+  "w-full rounded-xl border border-border-2 bg-surface-2 px-3.5 py-3 text-[15px] text-ink focus:outline-none focus:ring-[3px] focus:ring-accent/20 focus:border-accent";
+
+function capitalize(text: string): string {
+  return text.charAt(0).toUpperCase() + text.slice(1);
+}
+
+/**
+ * Las porciones de USDA y, si la última vez el usuario usó una que no está en
+ * esa lista (ej. un peso escrito a mano), esa también — al principio.
+ */
+function buildPortionOptions(food: FoodSearchResult): PortionOption[] {
+  const options = food.portions.map((portion) => ({ ...portion, isLastUsed: false }));
+  const last = food.lastUsedPortion;
+  if (!last) return options;
+
+  const match = options.find((option) => option.label === last.label && option.gramWeight === last.gramWeight);
+  if (match) {
+    match.isLastUsed = true;
+    return options;
+  }
+  return [{ ...last, isLastUsed: true }, ...options];
+}
+
+/** Preseleccionada: la que usó la última vez; si no, la mediana/regular; si no, la primera. */
+function defaultPortionChoice(options: PortionOption[]): PortionChoice {
+  if (options.length === 0) return CUSTOM;
+
+  const lastUsed = options.findIndex((option) => option.isLastUsed);
+  if (lastUsed !== -1) return lastUsed;
+
+  const medium = options.findIndex((option) => /mediano|regular/.test(option.label));
+  return medium !== -1 ? medium : 0;
+}
 
 interface AddMealEntryPanelProps {
   food: FoodSearchResult;
@@ -15,28 +61,38 @@ interface AddMealEntryPanelProps {
 }
 
 export function AddMealEntryPanel({ food, date, onConfirm, onCancel }: AddMealEntryPanelProps) {
-  const [unitMode, setUnitMode] = useState<UnitMode>("GRAMOS");
+  const portionOptions = useMemo(() => buildPortionOptions(food), [food]);
+
+  // Si ya lo registró por piezas antes, lo más probable es que lo vuelva a hacer.
+  const [unitMode, setUnitMode] = useState<UnitMode>(food.lastUsedPortion ? "PIEZAS" : "GRAMOS");
   const [quantityG, setQuantityG] = useState("100");
   const [pieceCount, setPieceCount] = useState("1");
-  const [gramsPerPiece, setGramsPerPiece] = useState(food.pieceWeightG !== null ? String(food.pieceWeightG) : "");
+  const [portionChoice, setPortionChoice] = useState<PortionChoice>(() => defaultPortionChoice(portionOptions));
+  const [customGramsPerPiece, setCustomGramsPerPiece] = useState("");
   const [mealType, setMealType] = useState<MealType>("DESAYUNO");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const selectedPortion = portionChoice === CUSTOM ? null : portionOptions[portionChoice];
+  const gramsEach = selectedPortion ? selectedPortion.gramWeight : Number(customGramsPerPiece);
   const pieces = Number(pieceCount);
-  const gramsEach = Number(gramsPerPiece);
-  const isPiecesValid = pieceCount.trim() !== "" && pieces > 0 && gramsPerPiece.trim() !== "" && gramsEach > 0;
+  const isGramsEachValid = selectedPortion !== null || (customGramsPerPiece.trim() !== "" && gramsEach > 0);
+  const isPiecesValid = pieceCount.trim() !== "" && pieces > 0 && isGramsEachValid;
 
   const directGrams = Number(quantityG);
   const isDirectGramsValid = quantityG.trim() !== "" && directGrams > 0;
 
   const isQuantityValid = unitMode === "GRAMOS" ? isDirectGramsValid : isPiecesValid;
-  const totalGrams = unitMode === "GRAMOS" ? directGrams : pieces * gramsEach;
+  const totalGrams = unitMode === "GRAMOS" ? directGrams : Math.round(pieces * gramsEach * 100) / 100;
 
   async function handleConfirm() {
     if (!isQuantityValid) {
       setError(
-        unitMode === "GRAMOS" ? "Ingresa una cantidad válida en gramos." : "Ingresa piezas y peso por pieza válidos.",
+        unitMode === "GRAMOS"
+          ? "Ingresa una cantidad válida en gramos."
+          : selectedPortion
+            ? "Ingresa cuántas piezas."
+            : "Ingresa piezas y peso por pieza válidos.",
       );
       return;
     }
@@ -49,7 +105,7 @@ export function AddMealEntryPanel({ food, date, onConfirm, onCancel }: AddMealEn
         description: food.description,
         quantityG: totalGrams,
         unitCount: unitMode === "PIEZAS" ? pieces : null,
-        unitLabel: unitMode === "PIEZAS" ? "pieza" : null,
+        unitLabel: unitMode === "PIEZAS" ? (selectedPortion?.label ?? "pieza") : null,
         fdcId: food.fdcId,
         caloriesPer100g: food.caloriesKcal,
         proteinPer100g: food.proteinG,
@@ -88,11 +144,8 @@ export function AddMealEntryPanel({ food, date, onConfirm, onCancel }: AddMealEn
               key={mode}
               type="button"
               onClick={() => setUnitMode(mode)}
-              className={
-                unitMode === mode
-                  ? "rounded-full bg-accent px-3.5 py-1.5 text-sm font-bold text-accent-ink"
-                  : "rounded-full border border-border-2 px-3.5 py-1.5 text-sm font-semibold text-muted hover:text-ink"
-              }
+              aria-pressed={unitMode === mode}
+              className={unitMode === mode ? PILL_SELECTED : PILL}
             >
               {mode === "GRAMOS" ? "Gramos" : "Piezas"}
             </button>
@@ -112,27 +165,55 @@ export function AddMealEntryPanel({ food, date, onConfirm, onCancel }: AddMealEn
             step="1"
             value={quantityG}
             onChange={(event) => setQuantityG(event.target.value)}
-            className="w-full rounded-xl border border-border-2 bg-surface-2 px-3.5 py-3 text-[15px] text-ink focus:outline-none focus:ring-[3px] focus:ring-accent/20 focus:border-accent"
+            className={INPUT}
           />
         </div>
       ) : (
-        <div className="flex flex-col gap-2">
-          <div className="flex gap-3">
-            <div className="flex flex-1 flex-col gap-1.5">
-              <label htmlFor="meal-pieces" className="text-[13px] font-semibold text-label">
-                Piezas
-              </label>
-              <input
-                id="meal-pieces"
-                type="number"
-                min="0.5"
-                step="0.5"
-                value={pieceCount}
-                onChange={(event) => setPieceCount(event.target.value)}
-                className="w-full rounded-xl border border-border-2 bg-surface-2 px-3.5 py-3 text-[15px] text-ink focus:outline-none focus:ring-[3px] focus:ring-accent/20 focus:border-accent"
-              />
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="meal-pieces" className="text-[13px] font-semibold text-label">
+              ¿Cuántas?
+            </label>
+            <input
+              id="meal-pieces"
+              type="number"
+              min="0.5"
+              step="0.5"
+              value={pieceCount}
+              onChange={(event) => setPieceCount(event.target.value)}
+              className={INPUT}
+            />
+          </div>
+
+          {portionOptions.length > 0 ? (
+            <div className="flex flex-col gap-2">
+              <span className="text-[13px] font-semibold text-label">Tamaño</span>
+              <div className="flex flex-wrap gap-2">
+                {portionOptions.map((option, index) => (
+                  <button
+                    key={`${option.label}-${option.gramWeight}`}
+                    type="button"
+                    onClick={() => setPortionChoice(index)}
+                    aria-pressed={portionChoice === index}
+                    className={portionChoice === index ? PILL_SELECTED : PILL}
+                  >
+                    {capitalize(option.label)} · {option.gramWeight}g{option.isLastUsed ? " · última vez" : ""}
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => setPortionChoice(CUSTOM)}
+                  aria-pressed={portionChoice === CUSTOM}
+                  className={portionChoice === CUSTOM ? PILL_SELECTED : PILL}
+                >
+                  Otro peso
+                </button>
+              </div>
             </div>
-            <div className="flex flex-1 flex-col gap-1.5">
+          ) : null}
+
+          {portionChoice === CUSTOM ? (
+            <div className="flex flex-col gap-1.5">
               <label htmlFor="meal-piece-weight" className="text-[13px] font-semibold text-label">
                 Peso por pieza (g)
               </label>
@@ -141,40 +222,35 @@ export function AddMealEntryPanel({ food, date, onConfirm, onCancel }: AddMealEn
                 type="number"
                 min="1"
                 step="1"
-                value={gramsPerPiece}
-                onChange={(event) => setGramsPerPiece(event.target.value)}
-                className="w-full rounded-xl border border-border-2 bg-surface-2 px-3.5 py-3 text-[15px] text-ink focus:outline-none focus:ring-[3px] focus:ring-accent/20 focus:border-accent"
+                value={customGramsPerPiece}
+                onChange={(event) => setCustomGramsPerPiece(event.target.value)}
+                className={INPUT}
               />
+              {portionOptions.length === 0 ? (
+                <span className="text-xs text-muted">
+                  USDA no trae medidas caseras para este alimento. Busca un resultado marcado como “Por pieza”, o
+                  escribe cuánto pesa una pieza.
+                </span>
+              ) : null}
             </div>
-          </div>
-          <span className="text-xs text-muted">
-            {food.pieceWeightG !== null
-              ? `Precargado con el dato de USDA: "${food.pieceWeightLabel}". Ajústalo si tu pieza pesa distinto.`
-              : "USDA no trae el peso de una pieza para este alimento — pésala una vez o estímalo para que el cálculo sea exacto."}
-          </span>
+          ) : null}
         </div>
       )}
 
       <div className="flex flex-col gap-2">
         <span className="text-[13px] font-semibold text-label">Comida</span>
         <div className="flex flex-wrap gap-2">
-          {MEAL_TYPES.map((meal) => {
-            const isSelected = mealType === meal.value;
-            return (
-              <button
-                key={meal.value}
-                type="button"
-                onClick={() => setMealType(meal.value)}
-                className={
-                  isSelected
-                    ? "rounded-full bg-accent px-3.5 py-1.5 text-sm font-bold text-accent-ink"
-                    : "rounded-full border border-border-2 px-3.5 py-1.5 text-sm font-semibold text-muted hover:text-ink"
-                }
-              >
-                {meal.label}
-              </button>
-            );
-          })}
+          {MEAL_TYPES.map((meal) => (
+            <button
+              key={meal.value}
+              type="button"
+              onClick={() => setMealType(meal.value)}
+              aria-pressed={mealType === meal.value}
+              className={mealType === meal.value ? PILL_SELECTED : PILL}
+            >
+              {meal.label}
+            </button>
+          ))}
         </div>
       </div>
 

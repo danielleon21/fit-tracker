@@ -1,5 +1,7 @@
-import type { FoodSearchResult } from "@fit-tracker/types";
+import type { FoodPortion, FoodSearchResult } from "@fit-tracker/types";
 import { usdaClient, type UsdaFoodNutrient } from "@/lib/usda.client";
+import { brandedPortion, toFoodPortions } from "@/lib/usda-portions";
+import { mealEntryRepository } from "@/repositories/meal-entry.repository";
 
 // USDA no siempre usa el mismo nombre para energía: los alimentos "Foundation"
 // la reportan como "Energy (Atwater ... Factors)" en vez de simplemente "Energy".
@@ -19,46 +21,64 @@ const DATA_TYPE_PRIORITY: Record<string, number> = {
   Branded: 3,
 };
 
-function pickNutrient(nutrients: UsdaFoodNutrient[], names: string[]): number | null {
+// `unit` es necesario para la energía: los SR Legacy la reportan dos veces con
+// el mismo nombre "Energy", una en kJ y otra en kcal, sin orden fijo. Sin
+// filtrar por unidad, a veces se tomaban los kJ como si fueran kcal (~4.2x).
+function pickNutrient(nutrients: UsdaFoodNutrient[], names: string[], unit?: string): number | null {
   for (const name of names) {
-    const match = nutrients.find((nutrient) => nutrient.nutrientName === name);
+    const match = nutrients.find(
+      (nutrient) => nutrient.nutrientName === name && (!unit || nutrient.unitName.toUpperCase() === unit),
+    );
     if (match) return match.value;
   }
   return null;
 }
 
-// servingSizeUnit no siempre es una unidad de masa (ej. "MLT" = mililitros
-// para líquidos) — solo tiene sentido como "peso de una pieza" cuando sí lo
-// es. Factor para convertir esa unidad a gramos.
-const MASS_UNIT_TO_GRAMS: Record<string, number> = {
-  g: 1,
-  GRM: 1,
-  MG: 0.001,
-  KG: 1000,
-};
+// La búsqueda de USDA no trae las medidas caseras de los genéricos: se piden
+// aparte, todas en una sola llamada. Si esa llamada falla, la búsqueda sigue
+// funcionando — solo que sin porciones, y se registra por gramos.
+async function portionsByFdcId(fdcIds: number[]): Promise<Map<number, FoodPortion[]>> {
+  if (fdcIds.length === 0) return new Map();
 
-function pieceWeightInGrams(food: { servingSize?: number; servingSizeUnit?: string }): number | null {
-  if (food.servingSize === undefined || !food.servingSizeUnit) return null;
-  const factor = MASS_UNIT_TO_GRAMS[food.servingSizeUnit];
-  return factor === undefined ? null : Math.round(food.servingSize * factor * 100) / 100;
+  try {
+    const details = await usdaClient.getFoods(fdcIds);
+    return new Map(details.map((detail) => [detail.fdcId, toFoodPortions(detail.foodPortions)]));
+  } catch (error) {
+    console.error("No se pudieron cargar las porciones de USDA:", error);
+    return new Map();
+  }
 }
 
 export const foodSearchService = {
-  async search(query: string): Promise<FoodSearchResult[]> {
+  async search(userId: string, query: string): Promise<FoodSearchResult[]> {
     const { foods } = await usdaClient.searchFoods(query);
+
+    // Los de marca ya traen su porción (la de la etiqueta) en la búsqueda.
+    const genericIds = foods.filter((food) => food.dataType !== "Branded").map((food) => food.fdcId);
+    const [portions, lastUsed] = await Promise.all([
+      portionsByFdcId(genericIds),
+      mealEntryRepository.findLatestPortionsByFdcIds(
+        userId,
+        foods.map((food) => food.fdcId),
+      ),
+    ]);
+
     return foods
-      .map((food) => ({
-        fdcId: food.fdcId,
-        description: food.description,
-        dataType: food.dataType,
-        brandOwner: food.brandOwner ?? null,
-        pieceWeightG: pieceWeightInGrams(food),
-        pieceWeightLabel: food.householdServingFullText ?? null,
-        caloriesKcal: pickNutrient(food.foodNutrients, ENERGY_NUTRIENT_NAMES),
-        proteinG: pickNutrient(food.foodNutrients, ["Protein"]),
-        fatG: pickNutrient(food.foodNutrients, ["Total lipid (fat)"]),
-        carbsG: pickNutrient(food.foodNutrients, ["Carbohydrate, by difference"]),
-      }))
+      .map((food) => {
+        const labelPortion = food.dataType === "Branded" ? brandedPortion(food) : null;
+        return {
+          fdcId: food.fdcId,
+          description: food.description,
+          dataType: food.dataType,
+          brandOwner: food.brandOwner ?? null,
+          portions: labelPortion ? [labelPortion] : (portions.get(food.fdcId) ?? []),
+          lastUsedPortion: lastUsed.get(food.fdcId) ?? null,
+          caloriesKcal: pickNutrient(food.foodNutrients, ENERGY_NUTRIENT_NAMES, "KCAL"),
+          proteinG: pickNutrient(food.foodNutrients, ["Protein"]),
+          fatG: pickNutrient(food.foodNutrients, ["Total lipid (fat)"]),
+          carbsG: pickNutrient(food.foodNutrients, ["Carbohydrate, by difference"]),
+        };
+      })
       .sort((a, b) => (DATA_TYPE_PRIORITY[a.dataType] ?? 9) - (DATA_TYPE_PRIORITY[b.dataType] ?? 9));
   },
 };

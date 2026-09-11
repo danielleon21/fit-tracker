@@ -32,11 +32,19 @@ export function sumMacros(entries: MealEntry[]): MacroTotals {
   );
 }
 
-/** "2 piezas (100g)" si se agregó por piezas, o "100g" si fue directo en gramos. */
+/**
+ * "2 × grande (100g)" si se agregó por porción, o "100g" si fue directo en
+ * gramos. Con "×" y no con plural porque las etiquetas son frases
+ * ("rebanada regular") y pluralizarlas agregando una "s" saldría mal.
+ */
 export function formatQuantity(entry: Pick<MealEntry, "quantityG" | "unitCount" | "unitLabel">): string {
   if (entry.unitCount === null || !entry.unitLabel) return `${entry.quantityG}g`;
-  const plural = entry.unitCount === 1 ? entry.unitLabel : `${entry.unitLabel}s`;
-  return `${entry.unitCount} ${plural} (${entry.quantityG}g)`;
+  return `${entry.unitCount} × ${entry.unitLabel} (${entry.quantityG}g)`;
+}
+
+/** ¿Se puede registrar por pieza sin escribir el peso? */
+export function hasPortions(food: Pick<FoodSearchResult, "portions" | "lastUsedPortion">): boolean {
+  return food.portions.length > 0 || food.lastUsedPortion !== null;
 }
 
 export function groupByMealType(entries: MealEntry[]): Record<MealType, MealEntry[]> {

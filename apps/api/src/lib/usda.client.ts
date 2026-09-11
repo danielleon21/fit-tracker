@@ -15,13 +15,30 @@ export interface UsdaFood {
   // producto, útil para dejar claro que ese resultado no es un alimento
   // genérico sino un producto comercial específico.
   brandOwner?: string;
-  // Peso de "una porción/pieza" tal como lo reporta USDA — casi siempre
-  // ausente en alimentos genéricos (Foundation/SR Legacy), presente sobre
-  // todo en productos de marca. servingSizeUnit no siempre es masa (puede
-  // ser "MLT" para volumen) — hay que filtrar eso al usarlo.
+  // Porción declarada en la etiqueta: solo la traen los productos de marca.
+  // Los genéricos traen sus medidas caseras en `foodPortions`, que la
+  // búsqueda no incluye (ver getFoods). servingSizeUnit no siempre es masa
+  // (puede ser "MLT" para volumen) — hay que filtrar eso al usarlo.
   servingSize?: number;
   servingSizeUnit?: string;
   householdServingFullText?: string;
+}
+
+export interface UsdaFoodPortion {
+  gramWeight: number;
+  // FNDDS: la medida completa ("1 large", o "Quantity not specified").
+  portionDescription?: string;
+  // SR Legacy y Foundation: la medida viene partida en cantidad + unidad +
+  // modifier (1 + "undetermined" + "large"). En FNDDS modifier es un código
+  // numérico interno, no texto.
+  amount?: number;
+  modifier?: string;
+  measureUnit?: { name?: string };
+}
+
+export interface UsdaFoodDetail {
+  fdcId: number;
+  foodPortions?: UsdaFoodPortion[];
 }
 
 interface UsdaSearchResponse {
@@ -36,6 +53,20 @@ export const usdaClient = {
     const url = new URL(`${USDA_BASE_URL}/foods/search`);
     url.searchParams.set("query", query);
     url.searchParams.set("pageSize", String(pageSize));
+    url.searchParams.set("api_key", process.env.USDA_API_KEY ?? "");
+
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`USDA API error: ${res.status}`);
+    return res.json();
+  },
+
+  // Detalle de varios alimentos en una sola llamada (USDA acepta hasta 20
+  // fdcIds). Solo lo usamos por `foodPortions`: pedir un único nutriente
+  // (208 = energía) reduce la respuesta ~6x y las porciones siguen viniendo.
+  async getFoods(fdcIds: number[]): Promise<UsdaFoodDetail[]> {
+    const url = new URL(`${USDA_BASE_URL}/foods`);
+    url.searchParams.set("fdcIds", fdcIds.join(","));
+    url.searchParams.set("nutrients", "208");
     url.searchParams.set("api_key", process.env.USDA_API_KEY ?? "");
 
     const res = await fetch(url);

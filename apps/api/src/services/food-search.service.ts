@@ -1,6 +1,7 @@
 import type { FoodPortion, FoodSearchResult } from "@fit-tracker/types";
-import { usdaClient, type UsdaFoodNutrient } from "@/lib/usda.client";
+import { usdaClient, type UsdaFood, type UsdaFoodNutrient } from "@/lib/usda.client";
 import { toFoodPortions } from "@/lib/usda-portions";
+import { stripAccents } from "@/lib/text";
 import { rankIngredients } from "@/services/food-ranking";
 import { mealEntryRepository } from "@/repositories/meal-entry.repository";
 
@@ -48,6 +49,10 @@ function pickNutrient(nutrients: UsdaFoodNutrient[], names: string[], unit?: str
   return null;
 }
 
+function caloriesOf(food: UsdaFood): number | null {
+  return pickNutrient(food.foodNutrients, ENERGY_NUTRIENT_NAMES, "KCAL");
+}
+
 // La búsqueda de USDA no trae las medidas caseras: se piden aparte, todas en
 // una sola llamada. Si esa llamada falla, la búsqueda sigue funcionando — solo
 // que sin porciones, y se registra por gramos.
@@ -65,14 +70,25 @@ async function portionsByFdcId(fdcIds: number[]): Promise<Map<number, FoodPortio
 
 export const foodSearchService = {
   async search(userId: string, query: string): Promise<FoodSearchResult[]> {
-    const { foods: candidates } = await usdaClient.searchFoods(query, {
+    // USDA no ignora los acentos: "jalapeño" da 0 resultados y "jalapeno"
+    // encuentra el chile. Sus descripciones nunca los llevan.
+    const { foods: candidates } = await usdaClient.searchFoods(stripAccents(query), {
       dataTypes: INGREDIENT_DATA_TYPES,
       pageSize: USDA_PAGE_SIZE,
     });
-    const foods = rankIngredients(
+    const ranked = rankIngredients(
       candidates.filter((food) => !food.foodCategory || !EXCLUDED_CATEGORIES.has(food.foodCategory)),
       query,
-    ).slice(0, RESULT_LIMIT);
+    );
+
+    // Algunos Foundation vienen sin energía ni macros ("Tortilla, corn, shelf
+    // stable", "Oil, corn") y aun así el ranking los ponía primero; al
+    // agregarlos sumaban 0 kcal sin avisar. Van al final, así que casi siempre
+    // quedan fuera del límite. Si alguno entra, la web no deja agregarlo.
+    const foods = [
+      ...ranked.filter((food) => caloriesOf(food) !== null),
+      ...ranked.filter((food) => caloriesOf(food) === null),
+    ].slice(0, RESULT_LIMIT);
 
     const fdcIds = foods.map((food) => food.fdcId);
     const [portions, lastUsed] = await Promise.all([
@@ -86,7 +102,7 @@ export const foodSearchService = {
       dataType: food.dataType,
       portions: portions.get(food.fdcId) ?? [],
       lastUsedPortion: lastUsed.get(food.fdcId) ?? null,
-      caloriesKcal: pickNutrient(food.foodNutrients, ENERGY_NUTRIENT_NAMES, "KCAL"),
+      caloriesKcal: caloriesOf(food),
       proteinG: pickNutrient(food.foodNutrients, ["Protein"]),
       fatG: pickNutrient(food.foodNutrients, ["Total lipid (fat)"]),
       carbsG: pickNutrient(food.foodNutrients, ["Carbohydrate, by difference"]),

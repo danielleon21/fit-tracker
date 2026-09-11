@@ -1,3 +1,5 @@
+import { stripAccents } from "@/lib/text";
+
 // Orden de los resultados del buscador: ingredientes antes que recetas.
 //
 // USDA ordena por coincidencia de texto, así que buscando "rice" empata igual
@@ -43,10 +45,7 @@ function isProcessed(food: RankableFood): boolean {
 }
 
 function toWords(text: string): string[] {
-  return text
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
+  return stripAccents(text.toLowerCase())
     .split(/[^a-z0-9]+/)
     .filter(Boolean)
     .map(singular);

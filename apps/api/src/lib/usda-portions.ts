@@ -1,5 +1,5 @@
 import type { FoodPortion } from "@fit-tracker/types";
-import type { UsdaFood, UsdaFoodPortion } from "@/lib/usda.client";
+import type { UsdaFoodPortion } from "@/lib/usda.client";
 
 // Traducción de las medidas caseras más comunes de USDA. Va por frase
 // completa y no palabra por palabra: en español el adjetivo va después del
@@ -51,15 +51,6 @@ const PHRASES: Record<string, string> = {
 
 // Porción "default" de FNDDS, sin una medida real detrás.
 const QUANTITY_NOT_SPECIFIED = "quantity not specified";
-
-// Gramos por unidad de masa en la etiqueta de un producto de marca. Las de
-// volumen ("MLT") no se pueden pasar a gramos sin la densidad: se ignoran.
-const MASS_UNIT_TO_GRAMS: Record<string, number> = {
-  g: 1,
-  GRM: 1,
-  MG: 0.001,
-  KG: 1000,
-};
 
 function round2(value: number): number {
   return Math.round(value * 100) / 100;
@@ -118,20 +109,4 @@ export function toFoodPortions(portions: UsdaFoodPortion[] = []): FoodPortion[] 
   }
 
   return [...byLabel.values()].sort((a, b) => a.gramWeight - b.gramWeight);
-}
-
-/** La porción que declara la etiqueta de un producto de marca, si viene en unidad de masa. */
-export function brandedPortion(
-  food: Pick<UsdaFood, "servingSize" | "servingSizeUnit" | "householdServingFullText">,
-): FoodPortion | null {
-  if (food.servingSize === undefined || !food.servingSizeUnit) return null;
-
-  const factor = MASS_UNIT_TO_GRAMS[food.servingSizeUnit];
-  if (factor === undefined) return null;
-
-  const gramWeight = round2(food.servingSize * factor);
-  if (!(gramWeight > 0)) return null;
-
-  const label = food.householdServingFullText ? translatePortionLabel(food.householdServingFullText) : "porción";
-  return { label, gramWeight };
 }

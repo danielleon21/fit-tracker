@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import type { CreateMealEntryInput, FoodPortion, FoodSearchResult, MealType } from "@fit-tracker/types";
-import { MEAL_TYPES, foodSourceLabel, isGenericFood, scaleMacro } from "@/lib/nutrition";
+import { MEAL_TYPES, scaleMacro } from "@/lib/nutrition";
 
 type UnitMode = "GRAMOS" | "PIEZAS";
 
@@ -119,22 +119,9 @@ export function AddMealEntryPanel({ food, date, onConfirm, onCancel }: AddMealEn
     }
   }
 
-  const generic = isGenericFood(food);
-
   return (
     <div className="flex flex-col gap-4 rounded-2xl border border-accent bg-surface p-5">
-      <div className="flex flex-col gap-1">
-        <div className="font-serif text-base font-semibold capitalize text-ink">{food.description.toLowerCase()}</div>
-        <span
-          className={
-            generic
-              ? "w-fit rounded-full bg-success-bg px-2 py-0.5 text-[10px] font-bold uppercase text-success"
-              : "w-fit rounded-full bg-surface-2 px-2 py-0.5 text-[10px] font-bold uppercase text-muted"
-          }
-        >
-          {foodSourceLabel(food)}
-        </span>
-      </div>
+      <div className="font-serif text-base font-semibold capitalize text-ink">{food.description.toLowerCase()}</div>
 
       <div className="flex flex-col gap-2">
         <span className="text-[13px] font-semibold text-label">¿Cómo lo vas a medir?</span>

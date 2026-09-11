@@ -11,9 +11,9 @@ export interface FoodPortion {
 export interface FoodSearchResult {
   fdcId: number;
   description: string;
+  // "Foundation" o "SR Legacy": la búsqueda solo trae alimentos genéricos
+  // (ingredientes), no platillos de encuesta ni productos de marca.
   dataType: string;
-  // Solo presente cuando dataType === "Branded".
-  brandOwner: string | null;
   // Medidas caseras de USDA (tamaños de huevo, de tortilla, rebanadas de
   // pan...), ordenadas de menor a mayor peso. Vacío cuando USDA no trae
   // ninguna, algo que pasa sobre todo con los alimentos Foundation.

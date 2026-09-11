@@ -11,17 +11,9 @@ export interface UsdaFood {
   description: string;
   dataType: string;
   foodNutrients: UsdaFoodNutrient[];
-  // Solo presente cuando dataType === "Branded" — el nombre de marca del
-  // producto, útil para dejar claro que ese resultado no es un alimento
-  // genérico sino un producto comercial específico.
-  brandOwner?: string;
-  // Porción declarada en la etiqueta: solo la traen los productos de marca.
-  // Los genéricos traen sus medidas caseras en `foodPortions`, que la
-  // búsqueda no incluye (ver getFoods). servingSizeUnit no siempre es masa
-  // (puede ser "MLT" para volumen) — hay que filtrar eso al usarlo.
-  servingSize?: number;
-  servingSizeUnit?: string;
-  householdServingFullText?: string;
+  // Grupo de alimento de USDA ("Poultry Products", "Fast Foods"...). Las
+  // medidas caseras no vienen en la búsqueda: se piden aparte (ver getFoods).
+  foodCategory?: string;
 }
 
 export interface UsdaFoodPortion {
@@ -45,14 +37,22 @@ interface UsdaSearchResponse {
   foods: UsdaFood[];
 }
 
+interface SearchFoodsOptions {
+  // "Foundation", "SR Legacy", "Survey (FNDDS)", "Branded". Sin valor, USDA
+  // busca en los cuatro.
+  dataTypes?: string[];
+  pageSize?: number;
+}
+
 // USDA FoodData Central (CC0): se puede persistir/cachear libremente.
 // Los valores de `foodNutrients` siempre vienen normalizados por 100g,
-// sin importar el dataType del alimento (Foundation, SR Legacy o Branded).
+// sin importar el dataType del alimento.
 export const usdaClient = {
-  async searchFoods(query: string, pageSize = 15): Promise<UsdaSearchResponse> {
+  async searchFoods(query: string, { dataTypes, pageSize = 15 }: SearchFoodsOptions = {}): Promise<UsdaSearchResponse> {
     const url = new URL(`${USDA_BASE_URL}/foods/search`);
     url.searchParams.set("query", query);
     url.searchParams.set("pageSize", String(pageSize));
+    if (dataTypes?.length) url.searchParams.set("dataType", dataTypes.join(","));
     url.searchParams.set("api_key", process.env.USDA_API_KEY ?? "");
 
     const res = await fetch(url);

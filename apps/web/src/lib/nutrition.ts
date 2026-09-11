@@ -53,27 +53,6 @@ export function groupByMealType(entries: MealEntry[]): Record<MealType, MealEntr
   return grouped;
 }
 
-// USDA junta en un mismo buscador 4 tipos de datos muy distintos: Foundation
-// y SR Legacy son alimentos genéricos analizados en laboratorio (los más
-// verídicos para "cuánta proteína tiene una pechuga de pollo"), Survey (FNDDS)
-// son promedios de encuestas de dieta, y Branded es un producto de marca
-// específico (solo correcto si es exactamente esa marca).
-const DATA_TYPE_LABELS: Record<string, string> = {
-  Foundation: "Genérico (USDA)",
-  "SR Legacy": "Genérico (USDA)",
-  "Survey (FNDDS)": "Promedio de encuesta",
-  Branded: "Producto de marca",
-};
-
-export function isGenericFood(food: Pick<FoodSearchResult, "dataType">): boolean {
-  return food.dataType === "Foundation" || food.dataType === "SR Legacy";
-}
-
-export function foodSourceLabel(food: Pick<FoodSearchResult, "dataType" | "brandOwner">): string {
-  if (food.dataType === "Branded" && food.brandOwner) return food.brandOwner;
-  return DATA_TYPE_LABELS[food.dataType] ?? food.dataType;
-}
-
 /**
  * Kcal por gramo de cada macro (factores de Atwater). El reparto de energía se
  * calcula desde los gramos y no desde `caloriesKcal` porque ese total también

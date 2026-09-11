@@ -12,7 +12,7 @@ Para el contexto completo de arquitectura y decisiones de diseño, ver [CLAUDE.m
 | **Progreso** (peso, % grasa, % músculo, peso ideal) | ✅ CRUD conectado a la base de datos real, con modal de primer ingreso y edición de perfil |
 | **Gym Tracker** (rutinas, catálogo de ejercicios wger, modal de entrenamiento, progreso por ejercicio, histórico + heatmap) | ✅ Completo |
 | **Dashboard** (`/`) | ✅ Muestra progreso y la rutina de hoy reales; calorías y macros siguen en *empty state* (esperando Nutrition Tracker) |
-| **Nutrition Tracker** (PDFs de InBody/nutrióloga, macros, tracking diario) | ⏳ No implementado |
+| **Nutrition Tracker** (búsqueda de alimentos en USDA, registro diario de comidas) | ⏸️ En pausa: en producción muestra "En construcción" (flag `NUTRITION_UNDER_CONSTRUCTION`); en local sigue disponible para desarrollo |
 | **Peso ideal vía import de PDF de InBody** | ⏳ Pendiente — hoy se ingresa a mano en el formulario de Progreso |
 | **Deploy a producción (MVP1, sin dominio propio)** | ✅ En vivo — ver [Deploy a producción](#deploy-a-producción) |
 
@@ -133,6 +133,7 @@ Dentro de `packages/database` también hay `pnpm db:migrate` (crea/aplica migrac
 | `WGER_API_KEY` / `USDA_API_KEY` / `EDAMAM_APP_ID` / `EDAMAM_APP_KEY` / `ANTHROPIC_API_KEY` / `SUPABASE_URL` / `SUPABASE_SERVICE_KEY` | `apps/api` | Para Nutrition Tracker — no implementado aún, pueden quedar vacías |
 | `NEXT_PUBLIC_API_URL` | `apps/web` | URL de `apps/api` para el navegador. Vacía en producción sin dominio propio (rutas relativas, ver [Deploy](#deploy-a-producción)) |
 | `API_ORIGIN` | `apps/web` | Solo en producción sin dominio propio: dominio real del proyecto de Vercel de `apps/api`, usado por el rewrite en `next.config.mjs` |
+| `NUTRITION_UNDER_CONSTRUCTION` | `apps/web` | Módulo de Nutrición en pausa: `"true"` muestra "En construcción", `"false"` lo habilita. Sin definir: en pausa en producción y disponible en local. Se resuelve en el build, así que cambiarla en Vercel requiere redesplegar |
 
 Ninguna variable de `apps/api` debe exponerse jamás al frontend.
 

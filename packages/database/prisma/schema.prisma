@@ -275,11 +275,11 @@ model HabitLog {
 //
 // quantityG siempre es la fuente de verdad para el calculo (gramos totales).
 // unitCount/unitLabel son solo para mostrar como se capturo cuando se agrego
-// por piezas en vez de gramos directos (ej. "2 piezas" en vez de "100g") -- el
-// front ya convierte piezas -> gramos antes de mandar el request, USDA casi
-// nunca trae el peso de "una pieza" para alimentos genericos asi que ese
-// peso lo escribe el usuario (o se autorellena si el alimento elegido si trae
-// ese dato, tipicamente productos de marca).
+// por piezas en vez de gramos directos (ej. "2 x grande" en vez de "100g") --
+// el front ya convierte piezas -> gramos antes de mandar el request. unitLabel
+// es la porcion elegida: una medida casera de USDA (tamanos de huevo,
+// rebanadas de pan...) o "pieza" si el usuario escribio el peso a mano porque
+// USDA no traia medidas para ese alimento.
 
 enum MealType {
   DESAYUNO

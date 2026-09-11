@@ -1,17 +1,26 @@
+// Una medida casera con su peso, ej. { label: "grande", gramWeight: 50 } para
+// un huevo. La etiqueta viene traducida al español cuando es un término
+// conocido; si no, queda en inglés tal como la reporta USDA.
+export interface FoodPortion {
+  label: string;
+  gramWeight: number;
+}
+
 // Macros siempre por 100g (así es como USDA FoodData Central normaliza sus
 // valores, sin importar el dataType del alimento).
 export interface FoodSearchResult {
   fdcId: number;
   description: string;
+  // "Foundation" o "SR Legacy": la búsqueda solo trae alimentos genéricos
+  // (ingredientes), no platillos de encuesta ni productos de marca.
   dataType: string;
-  // Solo presente cuando dataType === "Branded".
-  brandOwner: string | null;
-  // Peso en gramos de "una pieza" según USDA (ej. "1 EGG" = 31g) — solo viene
-  // poblado cuando el alimento trae un serving size en una unidad de masa.
-  // Casi nunca está presente en alimentos genéricos (Foundation/SR Legacy),
-  // típicamente solo en productos de marca (Branded).
-  pieceWeightG: number | null;
-  pieceWeightLabel: string | null;
+  // Medidas caseras de USDA (tamaños de huevo, de tortilla, rebanadas de
+  // pan...), ordenadas de menor a mayor peso. Vacío cuando USDA no trae
+  // ninguna, algo que pasa sobre todo con los alimentos Foundation.
+  portions: FoodPortion[];
+  // La última porción con la que este usuario registró este alimento, para
+  // proponérsela de nuevo sin que tenga que elegirla ni escribir su peso.
+  lastUsedPortion: FoodPortion | null;
   caloriesKcal: number | null;
   proteinG: number | null;
   fatG: number | null;

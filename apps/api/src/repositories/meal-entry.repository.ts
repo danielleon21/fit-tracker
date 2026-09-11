@@ -1,5 +1,6 @@
 import { prisma } from "@fit-tracker/database";
 import type { MealEntry as PrismaMealEntry } from "@fit-tracker/database";
+import type { FoodPortion } from "@fit-tracker/types";
 
 // Igual que ProgressEntry: Prisma serializa Decimal como string en JSON,
 // los convertimos a number aquí para cumplir el contrato real de MealEntry.
@@ -52,5 +53,30 @@ export const mealEntryRepository = {
   async delete(id: string, userId: string) {
     const deleted = await prisma.mealEntry.deleteMany({ where: { id, userId } });
     return deleted.count > 0;
+  },
+
+  /**
+   * Por cada fdcId, la última porción con la que el usuario lo registró por
+   * piezas. El peso de una pieza sale de los gramos totales ÷ las piezas.
+   */
+  async findLatestPortionsByFdcIds(userId: string, fdcIds: number[]) {
+    const latest = new Map<number, FoodPortion>();
+    if (fdcIds.length === 0) return latest;
+
+    const entries = await prisma.mealEntry.findMany({
+      where: { userId, fdcId: { in: fdcIds }, unitCount: { not: null } },
+      orderBy: { createdAt: "desc" },
+      select: { fdcId: true, quantityG: true, unitCount: true, unitLabel: true },
+    });
+
+    for (const entry of entries) {
+      if (entry.fdcId === null || entry.unitCount === null || latest.has(entry.fdcId)) continue;
+      latest.set(entry.fdcId, {
+        label: entry.unitLabel ?? "pieza",
+        gramWeight: Math.round((entry.quantityG.toNumber() / entry.unitCount.toNumber()) * 100) / 100,
+      });
+    }
+
+    return latest;
   },
 };

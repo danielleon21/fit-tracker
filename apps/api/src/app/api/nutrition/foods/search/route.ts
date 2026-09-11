@@ -6,9 +6,9 @@ import { handleRouteError } from "@/middleware/error-handler";
 
 export async function GET(request: NextRequest) {
   try {
-    await requireUserId();
+    const userId = await requireUserId();
     const { q } = foodSearchQuerySchema.parse({ q: request.nextUrl.searchParams.get("q") ?? "" });
-    const results = await foodSearchService.search(q);
+    const results = await foodSearchService.search(userId, q);
     return NextResponse.json({ data: results });
   } catch (error) {
     return handleRouteError(error);

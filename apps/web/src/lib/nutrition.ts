@@ -32,38 +32,25 @@ export function sumMacros(entries: MealEntry[]): MacroTotals {
   );
 }
 
-/** "2 piezas (100g)" si se agregó por piezas, o "100g" si fue directo en gramos. */
+/**
+ * "2 × grande (100g)" si se agregó por porción, o "100g" si fue directo en
+ * gramos. Con "×" y no con plural porque las etiquetas son frases
+ * ("rebanada regular") y pluralizarlas agregando una "s" saldría mal.
+ */
 export function formatQuantity(entry: Pick<MealEntry, "quantityG" | "unitCount" | "unitLabel">): string {
   if (entry.unitCount === null || !entry.unitLabel) return `${entry.quantityG}g`;
-  const plural = entry.unitCount === 1 ? entry.unitLabel : `${entry.unitLabel}s`;
-  return `${entry.unitCount} ${plural} (${entry.quantityG}g)`;
+  return `${entry.unitCount} × ${entry.unitLabel} (${entry.quantityG}g)`;
+}
+
+/** ¿Se puede registrar por pieza sin escribir el peso? */
+export function hasPortions(food: Pick<FoodSearchResult, "portions" | "lastUsedPortion">): boolean {
+  return food.portions.length > 0 || food.lastUsedPortion !== null;
 }
 
 export function groupByMealType(entries: MealEntry[]): Record<MealType, MealEntry[]> {
   const grouped = { DESAYUNO: [], COMIDA: [], CENA: [], SNACK: [] } as Record<MealType, MealEntry[]>;
   for (const entry of entries) grouped[entry.mealType].push(entry);
   return grouped;
-}
-
-// USDA junta en un mismo buscador 4 tipos de datos muy distintos: Foundation
-// y SR Legacy son alimentos genéricos analizados en laboratorio (los más
-// verídicos para "cuánta proteína tiene una pechuga de pollo"), Survey (FNDDS)
-// son promedios de encuestas de dieta, y Branded es un producto de marca
-// específico (solo correcto si es exactamente esa marca).
-const DATA_TYPE_LABELS: Record<string, string> = {
-  Foundation: "Genérico (USDA)",
-  "SR Legacy": "Genérico (USDA)",
-  "Survey (FNDDS)": "Promedio de encuesta",
-  Branded: "Producto de marca",
-};
-
-export function isGenericFood(food: Pick<FoodSearchResult, "dataType">): boolean {
-  return food.dataType === "Foundation" || food.dataType === "SR Legacy";
-}
-
-export function foodSourceLabel(food: Pick<FoodSearchResult, "dataType" | "brandOwner">): string {
-  if (food.dataType === "Branded" && food.brandOwner) return food.brandOwner;
-  return DATA_TYPE_LABELS[food.dataType] ?? food.dataType;
 }
 
 /**

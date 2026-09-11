@@ -47,6 +47,44 @@ export function hasPortions(food: Pick<FoodSearchResult, "portions" | "lastUsedP
   return food.portions.length > 0 || food.lastUsedPortion !== null;
 }
 
+/**
+ * ¿Se puede agregar? Algunos alimentos de USDA vienen sin energía ni macros:
+ * agregarlos sumaría 0 kcal al día sin que se note (`sumMacros` cuenta el
+ * `null` como 0).
+ */
+export function hasCalories(food: Pick<FoodSearchResult, "caloriesKcal">): boolean {
+  return food.caloriesKcal !== null;
+}
+
+/** La comida que toca a esta hora: desayuno hasta las 12, comida hasta las 6 de la tarde y cena después. */
+export function mealTypeForHour(hour: number): MealType {
+  if (hour >= 5 && hour < 12) return "DESAYUNO";
+  if (hour >= 12 && hour < 18) return "COMIDA";
+  return "CENA";
+}
+
+/** La última comida a la que se agregó un alimento, y cuándo. */
+export interface LastMealChoice {
+  mealType: MealType;
+  /** Día del registro, YYYY-MM-DD. */
+  date: string;
+  /** `Date.now()` al agregarlo. */
+  at: number;
+}
+
+// Los ingredientes de un platillo se agregan uno tras otro. Pasada una hora,
+// lo más probable es que ya sea otra comida.
+const SAME_MEAL_WINDOW_MS = 60 * 60 * 1000;
+
+/**
+ * Comida preseleccionada al agregar un alimento: la del alimento anterior si
+ * fue el mismo día y hace menos de una hora; si no, la que toca por la hora.
+ */
+export function suggestMealType(date: string, last: LastMealChoice | null, now = new Date()): MealType {
+  if (last && last.date === date && now.getTime() - last.at < SAME_MEAL_WINDOW_MS) return last.mealType;
+  return mealTypeForHour(now.getHours());
+}
+
 export function groupByMealType(entries: MealEntry[]): Record<MealType, MealEntry[]> {
   const grouped = { DESAYUNO: [], COMIDA: [], CENA: [], SNACK: [] } as Record<MealType, MealEntry[]>;
   for (const entry of entries) grouped[entry.mealType].push(entry);

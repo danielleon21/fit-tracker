@@ -1,5 +1,5 @@
 import type { FoodSearchResult } from "@fit-tracker/types";
-import { hasPortions } from "@/lib/nutrition";
+import { hasCalories, hasPortions } from "@/lib/nutrition";
 
 function formatMacro(value: number | null, unit: string) {
   return value === null ? "—" : `${Math.round(value * 10) / 10}${unit}`;
@@ -11,6 +11,8 @@ interface FoodResultCardProps {
 }
 
 export function FoodResultCard({ food, onAdd }: FoodResultCardProps) {
+  const canAdd = hasCalories(food);
+
   return (
     <div className="flex flex-col gap-3 rounded-2xl border border-border bg-surface p-5">
       <div className="flex items-start justify-between gap-3">
@@ -24,15 +26,18 @@ export function FoodResultCard({ food, onAdd }: FoodResultCardProps) {
                 Por pieza
               </span>
             ) : null}
-            <span className="text-xs text-muted">Macros por 100g</span>
+            <span className="text-xs text-muted">
+              {canAdd ? "Macros por 100g" : "USDA no tiene sus calorías, elige otro resultado"}
+            </span>
           </div>
         </div>
         <button
           type="button"
           onClick={() => onAdd(food)}
-          className="flex-none rounded-full border border-accent px-3.5 py-1.5 text-xs font-bold text-accent hover:bg-accent hover:text-accent-ink"
+          disabled={!canAdd}
+          className="flex-none rounded-full border border-accent px-3.5 py-1.5 text-xs font-bold text-accent hover:bg-accent hover:text-accent-ink disabled:cursor-not-allowed disabled:border-border-2 disabled:bg-transparent disabled:text-placeholder"
         >
-          + Agregar
+          {canAdd ? "+ Agregar" : "Sin datos"}
         </button>
       </div>
       <div className="grid grid-cols-4 gap-2 text-center">

@@ -8,6 +8,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useFoodSearch } from "@/hooks/useFoodSearch";
 import { useMealEntries } from "@/hooks/useMealEntries";
 import { formatLongDate, isIsoDate, todayIsoLocal } from "@/lib/date";
+import { suggestMealType, type LastMealChoice } from "@/lib/nutrition";
 import { EmptyState } from "@/components/dashboard/EmptyState";
 import { DateNavigator } from "@/components/shared/DateNavigator";
 import { FormField } from "@/components/shared/FormField";
@@ -48,6 +49,7 @@ function NutricionContent() {
   const { entries, isLoading: isEntriesLoading, addEntry, removeEntry } = useMealEntries(date);
   const [query, setQuery] = useState("");
   const [selectedFood, setSelectedFood] = useState<FoodSearchResult | null>(null);
+  const [lastMeal, setLastMeal] = useState<LastMealChoice | null>(null);
 
   useEffect(() => {
     if (!isAuthLoading && !user) {
@@ -71,6 +73,7 @@ function NutricionContent() {
 
   async function handleAddEntry(input: CreateMealEntryInput) {
     await addEntry(input);
+    setLastMeal({ mealType: input.mealType, date: input.date, at: Date.now() });
     setSelectedFood(null);
   }
 
@@ -157,6 +160,7 @@ function NutricionContent() {
                     key={food.fdcId}
                     food={food}
                     date={date}
+                    defaultMealType={suggestMealType(date, lastMeal)}
                     onConfirm={handleAddEntry}
                     onCancel={() => setSelectedFood(null)}
                   />

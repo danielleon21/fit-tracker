@@ -18,6 +18,10 @@ build/
 .env.local
 .env.*.local
 
+# notas locales de trabajo: TODO.md trae credenciales de la cuenta de prueba y
+# el repo es público — nunca debe versionarse
+TODO.md
+
 # prisma
 packages/database/generated/
 

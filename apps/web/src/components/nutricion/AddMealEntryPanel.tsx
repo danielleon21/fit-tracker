@@ -41,26 +41,35 @@ function buildPortionOptions(food: FoodSearchResult): PortionOption[] {
   return [{ ...last, isLastUsed: true }, ...options];
 }
 
-/** Preseleccionada: la que usó la última vez; si no, la mediana/regular; si no, la primera. */
+/**
+ * Preseleccionada: la que usó la última vez; si no, la mediana/regular; si no,
+ * la primera. "mediano" a secas gana sobre "rebanada mediana": de una cebolla
+ * lo normal es contar cebollas, no rebanadas.
+ */
 function defaultPortionChoice(options: PortionOption[]): PortionChoice {
   if (options.length === 0) return CUSTOM;
 
   const lastUsed = options.findIndex((option) => option.isLastUsed);
   if (lastUsed !== -1) return lastUsed;
 
-  const medium = options.findIndex((option) => /mediano|regular/.test(option.label));
-  return medium !== -1 ? medium : 0;
+  const medium = options.findIndex((option) => option.label === "mediano");
+  if (medium !== -1) return medium;
+
+  const regular = options.findIndex((option) => /median[oa]|regular/.test(option.label));
+  return regular !== -1 ? regular : 0;
 }
 
 interface AddMealEntryPanelProps {
   food: FoodSearchResult;
   /** Día al que se agrega el registro, YYYY-MM-DD. */
   date: string;
+  /** Comida preseleccionada (ver `suggestMealType`). */
+  defaultMealType: MealType;
   onConfirm: (input: CreateMealEntryInput) => Promise<void>;
   onCancel: () => void;
 }
 
-export function AddMealEntryPanel({ food, date, onConfirm, onCancel }: AddMealEntryPanelProps) {
+export function AddMealEntryPanel({ food, date, defaultMealType, onConfirm, onCancel }: AddMealEntryPanelProps) {
   const portionOptions = useMemo(() => buildPortionOptions(food), [food]);
 
   // Si ya lo registró por piezas antes, lo más probable es que lo vuelva a hacer.
@@ -69,7 +78,7 @@ export function AddMealEntryPanel({ food, date, onConfirm, onCancel }: AddMealEn
   const [pieceCount, setPieceCount] = useState("1");
   const [portionChoice, setPortionChoice] = useState<PortionChoice>(() => defaultPortionChoice(portionOptions));
   const [customGramsPerPiece, setCustomGramsPerPiece] = useState("");
-  const [mealType, setMealType] = useState<MealType>("DESAYUNO");
+  const [mealType, setMealType] = useState<MealType>(defaultMealType);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
